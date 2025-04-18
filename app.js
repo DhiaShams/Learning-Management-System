@@ -1,8 +1,10 @@
 const express = require('express');
 const app = express();
+const authRoutes = require('./routes/authRoutes');//importing the login route
 const db = require('./models');  // This will auto-load your Sequelize setup
 
 app.use(express.json());
+app.use('/api',authRoutes);
 
 const studentRoutes=require('./routes/student');
 app.use('/api/student',studentRoutes);
