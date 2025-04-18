@@ -4,6 +4,9 @@ const db = require('./models');  // This will auto-load your Sequelize setup
 
 app.use(express.json());
 
+const studentRoutes=require('./routes/student');
+app.use('/api/student',studentRoutes);
+
 // Test DB connection
 db.sequelize.authenticate()
   .then(() => {

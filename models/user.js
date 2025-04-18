@@ -2,6 +2,7 @@
 const {
   Model
 } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     /**
@@ -10,17 +11,56 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
+      // A User can enroll in many Courses (many-to-many relationship)
+      User.belongsToMany(models.Course, {
+        through: models.Enrollment,  // Associating via the Enrollment table
+        foreignKey: 'userId',
+        as: 'enrolledCourses',
+      });
+
+      // A User can leave reviews for many Courses (one-to-many relationship)
+      User.hasMany(models.Review, {
+        foreignKey: 'userId',
+        as: 'reviews',
+      });
+
+      // A User can ask many Doubts (one-to-many relationship)
+      User.hasMany(models.Doubt, {
+        foreignKey: 'userId',
+        as: 'doubts',
+      });
+
+      // A User can receive many Certificates (one-to-many relationship)
+      User.hasMany(models.Certificate, {
+        foreignKey: 'userId',
+        as: 'certificates',
+      });
     }
   }
+
   User.init({
-    name: DataTypes.STRING,
-    email: DataTypes.STRING,
-    password: DataTypes.STRING,
-    role: DataTypes.STRING
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    email: {
+      type: DataTypes.STRING,
+      unique: true,  // Ensure email is unique
+      allowNull: false,
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    role: {
+      type: DataTypes.STRING,
+      defaultValue: 'student', // Default role is student, can be overridden for educators
+      allowNull: false,
+    },
   }, {
     sequelize,
     modelName: 'User',
   });
+
   return User;
 };
