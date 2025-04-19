@@ -9,6 +9,12 @@ app.use('/api',authRoutes);
 const studentRoutes=require('./routes/student');
 app.use('/api/student',studentRoutes);
 
+const educatorRoutes=require('./routes/educator');
+app.use('/api/educator',educatorRoutes);
+
+const courseRoutes = require('./routes/course');
+app.use('/api/courses', courseRoutes);
+
 // Test DB connection
 db.sequelize.authenticate()
   .then(() => {
