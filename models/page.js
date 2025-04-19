@@ -11,12 +11,22 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      Page.belongsTo(models.Lesson, { foreignKey: 'lessonId', onDelete: 'CASCADE' });
     }
   }
   Page.init({
-    title: DataTypes.STRING,
-    content: DataTypes.TEXT,
-    lessonId: DataTypes.INTEGER
+    title: {
+      type: DataTypes.STRING,
+      allowNull: false
+    },
+    content: {
+      type: DataTypes.TEXT,
+      allowNull: false
+    },
+    lessonId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    }
   }, {
     sequelize,
     modelName: 'Page',
