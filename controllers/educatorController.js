@@ -13,7 +13,7 @@ exports.registerEducator = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = await User.create({ name, email, password: hashedPassword,role: 'educator' });
 
-        res.status(201).json({ message: 'User registered successfully!', user: newUser,role: 'educator'});
+        res.status(201).json({ message: 'User registered successfully!', user: newUser});
     } catch (error) {
         console.error('Error during registration:', error);  // Log the full error
         res.status(500).json({ message: 'Error registering user', error: error.message });
