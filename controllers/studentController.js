@@ -11,7 +11,7 @@ exports.registerStudent = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
-        const newUser = await User.create({ name, email, password: hashedPassword });
+        const newUser = await User.create({ name, email, password: hashedPassword, role: 'student' });
 
         res.status(201).json({ message: 'User registered successfully!', user: newUser });
     } catch (error) {
@@ -29,8 +29,9 @@ exports.loginStudent = async (req, res) => {
         return res.status(404).json({ message: "User not found" });
       }
   
-      if (user.password !== password) {
-        return res.status(401).json({ message: "Incorrect password" });
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+          return res.status(401).json({ message: "Incorrect password" });
       }
   
       res.status(200).json({ message: "Login successful", user });
