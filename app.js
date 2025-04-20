@@ -21,6 +21,9 @@ app.use('/api/lessons', lessonRoutes);
 const pageRoutes = require('./routes/page');
 app.use('/api/pages', pageRoutes);
 
+const enrollmentRoutes = require('./routes/enrollment');
+app.use('/api/enroll', enrollmentRoutes);
+
 const progressRoutes= require('./routes/progress');
 app.use('/api/progress',progressRoutes);
 

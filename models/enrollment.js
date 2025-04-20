@@ -11,12 +11,25 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      Enrollment.belongsTo(models.User, { foreignKey: 'userId' });
+      Enrollment.belongsTo(models.Course, { foreignKey: 'courseId' });
     }
   }
   Enrollment.init({
-    userId: DataTypes.INTEGER,
-    courseId: DataTypes.INTEGER
-  }, {
+    userId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    courseId: {
+      type: DataTypes.INTEGER,
+      allowNull: false
+    },
+    enrolledAt: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW,
+      allowNull: false
+    }
+  },{
     sequelize,
     modelName: 'Enrollment',
   });
