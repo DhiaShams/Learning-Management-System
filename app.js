@@ -21,6 +21,9 @@ app.use('/api/lessons', lessonRoutes);
 const pageRoutes = require('./routes/page');
 app.use('/api/pages', pageRoutes);
 
+const progressRoutes= require('./routes/progress');
+app.use('/api/progress',progressRoutes);
+
 // Test DB connection
 db.sequelize.authenticate()
   .then(() => {
