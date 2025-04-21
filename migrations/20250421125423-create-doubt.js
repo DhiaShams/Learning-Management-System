@@ -15,11 +15,20 @@ module.exports = {
       courseId: {
         type: Sequelize.INTEGER
       },
-      question: {
+      lessonId: {
+        type: Sequelize.INTEGER
+      },
+      pageId: {
+        type: Sequelize.INTEGER
+      },
+      questionText: {
         type: Sequelize.TEXT
       },
-      answer: {
+      answerText: {
         type: Sequelize.TEXT
+      },
+      isResolved: {
+        type: Sequelize.BOOLEAN
       },
       createdAt: {
         allowNull: false,

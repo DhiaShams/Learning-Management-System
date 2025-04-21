@@ -1,4 +1,4 @@
-const { StudentProgress, Page, User, Lesson, Course } = require('../models');
+const { StudentProgress, Page, User, Lesson, Course} = require('../models');
 
 exports.trackProgress = async (req, res) => {
   try {

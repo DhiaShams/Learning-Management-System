@@ -27,6 +27,9 @@ app.use('/api/enroll', enrollmentRoutes);
 const progressRoutes= require('./routes/progress');
 app.use('/api/progress',progressRoutes);
 
+const doubtRoutes = require('./routes/doubt');
+app.use('/api/doubts', doubtRoutes);
+
 // Test DB connection
 db.sequelize.authenticate()
   .then(() => {
