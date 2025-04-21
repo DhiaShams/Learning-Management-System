@@ -30,6 +30,10 @@ app.use('/api/progress',progressRoutes);
 const doubtRoutes = require('./routes/doubt');
 app.use('/api/doubts', doubtRoutes);
 
+const certificateRoutes = require('./routes/certificate');
+app.use('/api/certificates', certificateRoutes);
+
+
 // Test DB connection
 db.sequelize.authenticate()
   .then(() => {
