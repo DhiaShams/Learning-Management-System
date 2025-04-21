@@ -33,6 +33,8 @@ app.use('/api/doubts', doubtRoutes);
 const certificateRoutes = require('./routes/certificate');
 app.use('/api/certificates', certificateRoutes);
 
+const reviewRoutes = require('./routes/review');
+app.use('/api/reviews', reviewRoutes);
 
 // Test DB connection
 db.sequelize.authenticate()
