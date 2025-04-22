@@ -15,14 +15,17 @@ module.exports = (sequelize, DataTypes) => {
       Enrollment.belongsTo(models.Course, { foreignKey: 'courseId' });
     }
   }
+  
   Enrollment.init({
     userId: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
+      unique: 'enrollment_unique_constraint',
     },
     courseId: {
       type: DataTypes.INTEGER,
-      allowNull: false
+      allowNull: false,
+      unique: 'enrollment_unique_constraint',
     },
     enrolledAt: {
       type: DataTypes.DATE,
