@@ -25,13 +25,15 @@ exports.enrollStudentInCourse = async (req, res) => {
       return res.status(400).json({ message: 'Student is already enrolled in this course.' });
     }
 
+    console.log('Enrollment body:', req.body);
+    console.log('userId:', userId, 'courseId:', courseId);
     // Enroll the student in the course
     const enrollment = await Enrollment.create({
       userId,
       courseId,
+      CourseId:courseId,
       enrolledAt: new Date()
     });
-
     return res.status(200).json({
       message: 'Enrollment successful!',
       enrollment
