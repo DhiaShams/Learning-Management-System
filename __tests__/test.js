@@ -20,7 +20,7 @@ const request = require("supertest");
        console.log(error);
      }
    });
-  test("User Sign Up", async () => {
+  test("Student Sign Up", async () => {
     const res = await agent.get("/csrf-token");
     const csrfToken = res.body.csrfToken;
 
@@ -36,7 +36,7 @@ const request = require("supertest");
     expect(response.body.user).toHaveProperty("email", "john@example.com");
 });
 
-test("User Login", async () => {
+test("Student Login", async () => {
   const res = await agent.get("/csrf-token"); 
   const csrfToken = res.body.csrfToken;
 
@@ -48,14 +48,15 @@ test("User Login", async () => {
 
   expect(response.statusCode).toBe(200);
   expect(response.body).toHaveProperty("message", "Login successful");
+  expect(response.statusCode).toBe(200);
   expect(response.body.user).toHaveProperty("email", "john@example.com");
 });
 
   test("Educator creates a course", async () => {
     // Login as educator first
-    let res = await agent.get("/");
-    let csrfToken = extractCsrfToken(res);
-    await agent.post("/signup").send({
+  let res = await agent.get("/csrf-token"); 
+  let csrfToken = res.body.csrfToken;
+    await agent.post("/api/educator/signup").send({
       name: "Alice",
       email: "alice@edu.com",
       password: "educatorpass",
@@ -63,56 +64,97 @@ test("User Login", async () => {
       _csrf: csrfToken
     });
 
-    res = await agent.get("/");
-    csrfToken = extractCsrfToken(res);
-    await agent.post("/login").send({
+    res = await agent.get("/csrf-token"); 
+    csrfToken = res.body.csrfToken;
+    await agent.post("/api/educator/login").send({
       email: "alice@edu.com",
       password: "educatorpass",
       _csrf: csrfToken
     });
 
-    res = await agent.get("/educator/courses/new");
-    csrfToken = extractCsrfToken(res);
-    const response = await agent.post("/educator/courses").send({
+    res = await agent.get("/csrf-token");
+    csrfToken = res.body.csrfToken;
+    const response = await agent.post("/api/courses/create").send({
       title: "Introduction to Programming",
       description: "Learn basic programming concepts.",
       _csrf: csrfToken
     });
-    expect(response.statusCode).toBe(302);
+    expect(response.statusCode).toBe(201);
+    expect(response.body).toHaveProperty("message", "Course created successfully!");
+  });
+  test("Educator creates a lesson", async () => {
+    res = await agent.get("/csrf-token");
+    csrfToken = res.body.csrfToken;
+    const response = await agent.post("/api/lessons/").send({
+      courseId: 1,
+      title: "Introduction to computing and problem solving",
+      _csrf: csrfToken
+    });
+    expect(response.statusCode).toBe(201);
+    expect(response.body).toHaveProperty("message","Lesson created successfully");
+  });
+
+  test("Educator creates a page", async () => {
+    res = await agent.get("/csrf-token");
+    csrfToken = res.body.csrfToken;
+    const response = await agent.post("/api/pages/").send({
+      lessonId: 1,
+      title: "Introduction to computers",
+      content: "A computer is defined as 'A computer is a programmable machine that receives input, stores and manipulates data, and provides output in a useful format.' ",
+      _csrf: csrfToken
+    });
+    expect(response.statusCode).toBe(201);
+    expect(response.body).toHaveProperty("message","Page created successfully");
   });
 
   test("Student enrolls in a course", async () => {
-    let res = await agent.get("/");
-    let csrfToken = extractCsrfToken(res);
-
+    // Fetch CSRF token
+    let res = await agent.get("/csrf-token");
+    let csrfToken = res.body.csrfToken;
+  
     // Login back as student
-    await agent.post("/login").send({
+    res = await agent.post("/api/student/login").send({
       email: "john@example.com",
       password: "securepassword",
-      _csrf: csrfToken
+      _csrf: csrfToken,
     });
-
-    res = await agent.get("/");
-    csrfToken = extractCsrfToken(res);
+  
+    expect(res.statusCode).toBe(200); // Ensure login was successful
+  
+    // Fetch CSRF token again after login
+    res = await agent.get("/csrf-token");
+    csrfToken = res.body.csrfToken;
+  
+    // Fetch CSRF token again before enrollment
+    res = await agent.get("/csrf-token");
+    csrfToken = res.body.csrfToken;
+  
+    // Enroll the student in the course
     const response = await agent.post("/api/enroll").send({
-      userId: 1, // Adjust based on your setup
-      courseId: 1, // Adjust based on your setup
-      _csrf: csrfToken
+      userId: 1,
+      courseId: 1,
+      _csrf: csrfToken,
     });
+  
+    // Validate the response
     expect(response.statusCode).toBe(200);
-    expect(response.body.message).toBe("Enrollment successful!");
+    expect(response.body).toHaveProperty("message", "Enrollment successful!");
   });
 
   test("Student marks a lesson page as completed", async () => {
-    let res = await agent.get("/");
-    let csrfToken = extractCsrfToken(res);
+    res = await agent.get("/csrf-token");
+    csrfToken = res.body.csrfToken;
 
-    const response = await agent.post("/api/lessons/1/complete").send({
-      userId: 1, // Adjust based on your setup
+    const response = await agent.post("/api/progress/track").send({
+      userId: 1,
+      courseId: 1, 
+      lessonId: 1, 
+      pageId: 1, 
+      isCompleted: true,
       _csrf: csrfToken
     });
-
+    
     expect(response.statusCode).toBe(200);
-    expect(response.body.success).toBe(true);
+    expect(response.body).toHaveProperty("message", "Progress updated successfully");
   });
-});
+ });
