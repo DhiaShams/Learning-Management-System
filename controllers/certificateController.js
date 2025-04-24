@@ -1,4 +1,4 @@
-const { Certificate, Course, User, Lesson, Page, StudentProgress } = require('../models');
+const { Certificate, Course, User, Lesson, Page, StudentProgress, Enrollment } = require('../models');
 
 exports.generateCertificate = async (req, res) => {
   try {
