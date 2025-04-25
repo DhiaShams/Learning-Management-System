@@ -61,9 +61,10 @@ app.post('/example', (req, res) => {
 });
 
 // Dashboard Route
+// Dashboard Route
 app.get("/", async (req, res) => {
   // Temporary mock data for student
-  const isStudent = true; // Replace with actual logic to determine user role
+  const isStudent = false; // Replace with actual logic to determine user role
   const studentName = "Amal"; // Replace with actual name once auth is complete
   const educatorName = "Educator"; // Replace with actual name once auth is complete
   const enrolledCourses = []; // Replace with actual enrolled courses
@@ -88,6 +89,33 @@ app.get("/", async (req, res) => {
       reviews,
     });
   }
+});
+
+// Route to render the course creation form
+app.get("/educator/courses/new", (req, res) => {
+  res.render("courseForm", {
+    formTitle: "Create New Course",
+    formAction: "/api/courses/create", // POST
+    csrfToken: req.csrfToken(),
+    course: null,
+    buttonLabel: "Create Course",
+  });
+});
+
+// Route to render the course editing form
+app.get("/educator/courses/:id/edit", async (req, res) => {
+  const courseId = req.params.id;
+  const course = await db.Course.findByPk(courseId); // Fetch course from the database
+  if (!course) {
+    return res.status(404).send("Course not found");
+  }
+  res.render("courseForm", {
+    formTitle: "Edit Course",
+    formAction: `/api/educator/courses/${course.id}?_method=PUT`, // if using method-override
+    csrfToken: req.csrfToken(),
+    course,
+    buttonLabel: "Update Course",
+  });
 });
 
 // Test Database Connection

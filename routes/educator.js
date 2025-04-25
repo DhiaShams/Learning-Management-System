@@ -7,5 +7,4 @@ router.post('/signup', educatorController.registerEducator);
 
 // Login Route
 router.post('/login', educatorController.loginEducator);
-
 module.exports = router;
