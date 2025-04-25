@@ -221,40 +221,50 @@ test("Student Login", async () => {
       expect(response.body).toHaveProperty("message", "Certificate generated successfully!");
     });
 
-    test("should fail certificate generation if not all pages are completed", async () => {
-      const res = await agent.get("/csrf-token");
-      const csrfToken = res.body.csrfToken;
-    
-      const response = await agent.post("/api/certificates/generate").send({
-        userId: 2, // Assuming this user hasn't completed all pages
-        courseId: 1,
-        score: 85,
-        _csrf: csrfToken
-      });
-    
-      expect(response.statusCode).toBe(400);
-      expect(response.body).toHaveProperty("message");
-    });    
-    
+test("should fail certificate generation if not all pages are completed", async () => {
+  // Sign up Student 2
+  let res = await agent.get("/csrf-token");
+  let csrfToken = res.body.csrfToken;
 
-  // describe("Course Completion and Certification", () => {
-  //   it("should mark a course as completed when all pages are done", async () => {
-  //     const res = await request(app)
-  //       .get(`/courses/${courseId}/status`)
-  //       .set("Authorization", `Bearer ${studentToken}`);
-  
-  //     expect(res.statusCode).toBe(200);
-  //     expect(res.body).toHaveProperty("completed", true);
-  //   });
-  
-  //   it("should allow certificate download upon completion", async () => {
-  //     const res = await request(app)
-  //       .get(`/courses/${courseId}/certificate`)
-  //       .set("Authorization", `Bearer ${studentToken}`);
-  
-  //     expect(res.statusCode).toBe(200);
-  //     expect(res.headers["content-type"]).toContain("application/pdf");
-  //   });
-  // });
+  await agent.post("/api/student/signup").send({
+    name: "Jane Smith",
+    email: "jane@example.com",
+    password: "studentpass2",
+    _csrf: csrfToken,
+  });
+
+  res = await agent.get("/csrf-token");
+  csrfToken = res.body.csrfToken;
+
+  await agent.post("/api/student/login").send({
+    email: "jane@example.com",
+    password: "studentpass2",
+    _csrf: csrfToken,
+  });
+
+  res = await agent.get("/csrf-token");
+  csrfToken = res.body.csrfToken;
+
+  // Enroll Student 2 in course 1
+  await agent.post("/api/enroll").send({
+    userId: 2,
+    courseId: 1,
+    _csrf: csrfToken,
+  });
+
+  // Now attempt certificate generation without marking any page complete
+  res = await agent.get("/csrf-token");
+  csrfToken = res.body.csrfToken;
+
+  const response = await agent.post("/api/certificates/generate").send({
+    userId: 2,
+    courseId: 1,
+    score: 85,
+    _csrf: csrfToken
+  });
+
+  expect(response.statusCode).toBe(400);
+  expect(response.body).toHaveProperty("message");
+}); 
   
  });
