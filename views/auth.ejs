@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title><%= role.charAt(0).toUpperCase() + role.slice(1) %> Authentication</title>
+  <meta name="csrf-token" content="<%= csrfToken %>" />
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans">
+
+  <div class="bg-white p-8 rounded-2xl shadow-md w-full max-w-md">
+    <h2 class="text-2xl font-bold mb-6 text-center"><%= role === 'student' ? 'Student' : 'Educator' %> Portal</h2>
+
+    <div class="flex justify-center mb-6 space-x-4">
+      <button id="loginTab" class="tab-btn px-4 py-2 rounded font-semibold bg-blue-600 text-white hover:bg-blue-700">Login</button>
+      <button id="signupTab" class="tab-btn px-4 py-2 rounded font-semibold text-blue-600 hover:bg-blue-100">Sign Up</button>
+    </div>
+
+    <!-- Login Form -->
+    <form id="loginForm" action="/api/<%= role %>/login" method="POST" class="space-y-4">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="email" name="email" placeholder="Email" required class="input">
+      <input type="password" name="password" placeholder="Password" required class="input">
+      <button type="submit" class="btn-primary w-full">Login</button>
+    </form>
+
+    <!-- Signup Form (initially hidden) -->
+    <form id="signupForm" action="/api/<%= role %>/signup" method="POST" class="space-y-4 hidden">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="text" name="name" placeholder="Full Name" required class="input">
+      <input type="email" name="email" placeholder="Email" required class="input">
+      <input type="password" name="password" placeholder="Password" required class="input">
+      <button type="submit" class="btn-primary w-full">Sign Up</button>
+    </form>
+  </div>
+
+  <script>
+    const loginBtn = document.getElementById("loginTab");
+    const signupBtn = document.getElementById("signupTab");
+    const loginForm = document.getElementById("loginForm");
+    const signupForm = document.getElementById("signupForm");
+
+    loginBtn.addEventListener("click", () => {
+      loginForm.classList.remove("hidden");
+      signupForm.classList.add("hidden");
+      loginBtn.classList.add("bg-blue-600", "text-white");
+      signupBtn.classList.remove("bg-blue-600", "text-white");
+      signupBtn.classList.add("text-blue-600");
+    });
+
+    signupBtn.addEventListener("click", () => {
+      signupForm.classList.remove("hidden");
+      loginForm.classList.add("hidden");
+      signupBtn.classList.add("bg-blue-600", "text-white");
+      loginBtn.classList.remove("bg-blue-600", "text-white");
+      loginBtn.classList.add("text-blue-600");
+    });
+  </script>
+
+  <style>
+    .input {
+      width: 100%;
+      padding: 0.75rem;
+      border: 1px solid #cbd5e0;
+      border-radius: 0.5rem;
+    }
+
+    .btn-primary {
+      background-color: #2563eb;
+      color: white;
+      padding: 0.75rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+    }
+
+    .btn-primary:hover {
+      background-color: #1d4ed8;
+    }
+  </style>
+</body>
+</html>
+

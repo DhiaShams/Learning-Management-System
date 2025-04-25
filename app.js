@@ -60,63 +60,99 @@ app.post('/example', (req, res) => {
     res.json({ message: 'CSRF token matched, POST request accepted!' });
 });
 
-// Dashboard Route
-// Dashboard Route
-app.get("/", async (req, res) => {
-  // Temporary mock data for student
-  const isStudent = false; // Replace with actual logic to determine user role
-  const studentName = "Amal"; // Replace with actual name once auth is complete
-  const educatorName = "Educator"; // Replace with actual name once auth is complete
-  const enrolledCourses = []; // Replace with actual enrolled courses
-  const certificates = []; // Replace with actual certificates
-  const courses = []; // Replace with actual courses for educators
-  const reviews = []; // Replace with actual reviews for educators
+app.get("/", (req, res) => {
+  const role = req.query.role;
+  res.render("index", {
+    role: role || null,
+  });
+});
 
-  if (isStudent) {
-    res.render("studentDashboard", { 
-      title: "Learning Management System",
-      csrfToken: req.csrfToken(),
-      studentName,
-      enrolledCourses,
-      certificates,
-    });
-  } else {
-    res.render("educatorDashboard", {
-      title: "Educator Dashboard",
-      csrfToken: req.csrfToken(),
-      educatorName,
-      courses,
-      reviews,
-    });
+app.get('/:role', (req, res) => {
+  const { role } = req.params;
+  if (!['student', 'educator'].includes(role)) {
+    return res.status(404).send('Not found');
   }
+  res.render('auth', {
+    role,
+    csrfToken: req.csrfToken(),
+  });
+});
+
+app.get("/student/signup", (req, res) => {
+  res.render("auth", {
+    role: "student",
+    csrfToken: req.csrfToken(),
+  });
+});
+
+app.get("/student/login", (req, res) => {
+  res.render("auth", {
+    role: "student",
+    csrfToken: req.csrfToken(),
+  });
+});
+
+app.get("/educator/signup", (req, res) => {
+  res.render("auth", {
+    role: "educator",
+    csrfToken: req.csrfToken(),
+  });
+});
+
+app.get("/educator/login", (req, res) => {
+  res.render("auth", {
+    role: "educator",
+    csrfToken: req.csrfToken(),
+  });
+});
+
+app.get("/student/dashboard", async (req, res) => {
+  const student = await Student.findByPk(req.session.studentId, {
+    include: [Course, Certificate]
+  });
+  res.render("studentDashboard", {
+    studentName: student.name,
+    enrolledCourses: student.Courses,
+    certificates: student.Certificates,
+  });
+});
+
+app.get("/educator/dashboard", async (req, res) => {
+  const educator = await Educator.findByPk(req.session.educatorId, {
+    include: [Course]
+  });
+  res.render("educatorDashboard", {
+    educatorName: educator.name,
+    courses: educator.Courses,
+  });
 });
 
 // Route to render the course creation form
-app.get("/educator/courses/new", (req, res) => {
-  res.render("courseForm", {
-    formTitle: "Create New Course",
-    formAction: "/api/courses/create", // POST
-    csrfToken: req.csrfToken(),
-    course: null,
-    buttonLabel: "Create Course",
-  });
-});
+// app.get("/educator/courses/new", (req, res) => {
+//   res.render("courseForm", {
+//     formTitle: "Create New Course",
+//     formAction: "/api/courses/create", // POST
+//     csrfToken: req.csrfToken(),
+//     course: null,
+//     buttonLabel: "Create Course",
+//   });
+// });
 
 // Route to render the course editing form
-app.get("/educator/courses/:id/edit", async (req, res) => {
-  const courseId = req.params.id;
-  const course = await db.Course.findByPk(courseId); // Fetch course from the database
-  if (!course) {
-    return res.status(404).send("Course not found");
-  }
-  res.render("courseForm", {
-    formTitle: "Edit Course",
-    formAction: `/api/educator/courses/${course.id}?_method=PUT`, // if using method-override
-    csrfToken: req.csrfToken(),
-    course,
-    buttonLabel: "Update Course",
-  });
-});
+// app.get("/educator/courses/:id/edit", async (req, res) => {
+//   const courseId = req.params.id;
+//   const course = await db.Course.findByPk(courseId); // Fetch course from the database
+//   if (!course) {
+//     return res.status(404).send("Course not found");
+//   }
+//   res.render("courseForm", {
+//     formTitle: "Edit Course",
+//     formAction: `/api/educator/courses/${course.id}?_method=PUT`, // if using method-override
+//     csrfToken: req.csrfToken(),
+//     course,
+//     buttonLabel: "Update Course",
+//   });
+// });
 
 // Test Database Connection
 db.sequelize.authenticate()
