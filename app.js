@@ -1,8 +1,10 @@
 const express = require('express');
-const path = require('path'); // Ensure 'path' is imported
+const path = require('path');
 const cookieParser = require('cookie-parser');
 const csrf = require('tiny-csrf');
-const db = require('./models'); // Auto-load Sequelize setup
+const session = require('express-session');
+const db = require('./models'); // Sequelize models
+const bcrypt = require('bcrypt'); // For password hashing
 
 const app = express();
 
@@ -10,63 +12,23 @@ const app = express();
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser("ssh! some secret string"));
 app.use(express.json());
+app.use(session({
+  secret: 'your-secret-key',
+  resave: false,
+  saveUninitialized: true,
+}));
 app.use(csrf('your_super_secret_key_here_12345', ['POST', 'PUT', 'DELETE', 'PATCH']));
 
 // Set EJS as the view engine
 app.set("view engine", "ejs");
 app.use(express.static(path.join(__dirname, "public")));
 
-// Routes
-const authRoutes = require('./routes/authRoutes');
-app.use('/api', authRoutes);
-
-const studentRoutes = require('./routes/student');
-app.use('/api/student', studentRoutes);
-
-const educatorRoutes = require('./routes/educator');
-app.use('/api/educator', educatorRoutes);
-
-const courseRoutes = require('./routes/course');
-app.use('/api/courses', courseRoutes);
-
-const lessonRoutes = require('./routes/lesson');
-app.use('/api/lessons', lessonRoutes);
-
-const pageRoutes = require('./routes/page');
-app.use('/api/pages', pageRoutes);
-
-const enrollmentRoutes = require('./routes/enrollment');
-app.use('/api/enroll', enrollmentRoutes);
-
-const progressRoutes = require('./routes/progress');
-app.use('/api/progress', progressRoutes);
-
-const doubtRoutes = require('./routes/doubt');
-app.use('/api/doubts', doubtRoutes);
-
-const certificateRoutes = require('./routes/certificate');
-app.use('/api/certificates', certificateRoutes);
-
-const reviewRoutes = require('./routes/review');
-app.use('/api/reviews', reviewRoutes);
-
 // CSRF Token Route
 app.get('/csrf-token', (req, res) => {
-    res.json({ csrfToken: req.csrfToken() });
+  res.json({ csrfToken: req.csrfToken() });
 });
 
-// Example Protected POST Route
-app.post('/example', (req, res) => {
-    res.json({ message: 'CSRF token matched, POST request accepted!' });
-});
-
-app.get("/", (req, res) => {
-  const role = req.query.role;
-  res.render("index", {
-    role: role || null,
-  });
-});
-
+// Render login/signup form with CSRF token
 app.get('/:role', (req, res) => {
   const { role } = req.params;
   if (!['student', 'educator'].includes(role)) {
@@ -78,81 +40,128 @@ app.get('/:role', (req, res) => {
   });
 });
 
-app.get("/student/signup", (req, res) => {
-  res.render("auth", {
-    role: "student",
-    csrfToken: req.csrfToken(),
-  });
+// Handle login
+app.post('/api/:role/login', async (req, res) => {
+  const { role } = req.params;
+  const { email, password } = req.body;
+
+  try {
+    const user = await db.User.findOne({ where: { email, role } });
+
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      // Validate password using bcrypt
+      return res.redirect(`/${role}/login?error=Invalid credentials`);
+    }
+
+    // Set session
+    req.session.user = {
+      id: user.id,
+      name: user.name,
+      role: role,
+    };
+
+    // Redirect to the respective dashboard
+    if (role === 'student') {
+      return res.redirect('/student/dashboard');
+    } else if (role === 'educator') {
+      return res.redirect('/educator/dashboard');
+    } else {
+      return res.status(400).send('Invalid role');
+    }
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).send('Internal server error');
+  }
 });
 
-app.get("/student/login", (req, res) => {
-  res.render("auth", {
-    role: "student",
-    csrfToken: req.csrfToken(),
-  });
+// Handle signup
+app.post('/api/:role/signup', async (req, res) => {
+  const { role } = req.params;
+  const { name, email, password } = req.body;
+
+  try {
+    // Hash password before storing
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await db.User.create({ name, email, password: hashedPassword, role });
+
+    // Set session
+    req.session.user = {
+      id: newUser.id,
+      name: newUser.name,
+      role: role,
+    };
+
+    // Redirect to the respective dashboard
+    if (role === 'student') {
+      return res.redirect('/student/dashboard');
+    } else if (role === 'educator') {
+      return res.redirect('/educator/dashboard');
+    } else {
+      return res.status(400).send('Invalid role');
+    }
+  } catch (error) {
+    console.error('Error during signup:', error);
+    res.status(500).send('Internal server error');
+  }
 });
 
-app.get("/educator/signup", (req, res) => {
-  res.render("auth", {
-    role: "educator",
-    csrfToken: req.csrfToken(),
-  });
-});
-
-app.get("/educator/login", (req, res) => {
-  res.render("auth", {
-    role: "educator",
-    csrfToken: req.csrfToken(),
-  });
-});
-
+// Student Dashboard
 app.get("/student/dashboard", async (req, res) => {
-  const student = await Student.findByPk(req.session.studentId, {
-    include: [Course, Certificate]
-  });
-  res.render("studentDashboard", {
-    studentName: student.name,
-    enrolledCourses: student.Courses,
-    certificates: student.Certificates,
-  });
+  if (!req.session.user || req.session.user.role !== 'student') {
+    return res.redirect("/student/login");
+  }
+
+  try {
+    const student = await db.User.findByPk(req.session.user.id, {
+      include: [
+        { model: db.Course, as: 'enrolledCourses' }, // Correct alias for enrolled courses
+        { model: db.Certificate, as: 'certificates' }, // Correct alias for certificates
+      ],
+    });
+
+    if (!student) {
+      return res.status(404).send('Student not found');
+    }
+
+    res.render("studentDashboard", {
+      studentName: student.name,
+      enrolledCourses: student.enrolledCourses,
+      certificates: student.certificates,
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.error('Error occurred while rendering student dashboard:', error);
+    res.status(500).send('Internal server error');
+  }
 });
 
+// Educator Dashboard
 app.get("/educator/dashboard", async (req, res) => {
-  const educator = await Educator.findByPk(req.session.educatorId, {
-    include: [Course]
-  });
-  res.render("educatorDashboard", {
-    educatorName: educator.name,
-    courses: educator.Courses,
-  });
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  try {
+    const educator = await db.User.findByPk(req.session.user.id, {
+      include: [
+        { model: db.Course, as: 'createdCourses' }, // Correct alias for created courses
+      ],
+    });
+
+    if (!educator) {
+      return res.status(404).send('Educator not found');
+    }
+
+    res.render("educatorDashboard", {
+      educatorName: educator.name,
+      courses: educator.createdCourses,
+    });
+  } catch (error) {
+    console.error('Error occurred while rendering educator dashboard:', error);
+    res.status(500).send('Internal server error');
+  }
 });
-
-// Route to render the course creation form
-// app.get("/educator/courses/new", (req, res) => {
-//   res.render("courseForm", {
-//     formTitle: "Create New Course",
-//     formAction: "/api/courses/create", // POST
-//     csrfToken: req.csrfToken(),
-//     course: null,
-//     buttonLabel: "Create Course",
-//   });
-// });
-
-// Route to render the course editing form
-// app.get("/educator/courses/:id/edit", async (req, res) => {
-//   const courseId = req.params.id;
-//   const course = await db.Course.findByPk(courseId); // Fetch course from the database
-//   if (!course) {
-//     return res.status(404).send("Course not found");
-//   }
-//   res.render("courseForm", {
-//     formTitle: "Edit Course",
-//     formAction: `/api/educator/courses/${course.id}?_method=PUT`, // if using method-override
-//     csrfToken: req.csrfToken(),
-//     course,
-//     buttonLabel: "Update Course",
-//   });
-// });
 
 // Test Database Connection
 db.sequelize.authenticate()
