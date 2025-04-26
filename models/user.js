@@ -35,6 +35,12 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'userId',
         as: 'certificates',
       });
+
+      // A User (educator) can create many Courses (one-to-many relationship)
+      User.hasMany(models.Course, {
+          foreignKey: 'educatorId',
+          as: 'createdCourses', 
+      });
     }
   }
 

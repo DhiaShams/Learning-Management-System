@@ -152,7 +152,16 @@ app.get("/educator/dashboard", async (req, res) => {
   try {
     const educator = await db.User.findByPk(req.session.user.id, {
       include: [
-        { model: db.Course, as: 'createdCourses' }, // Correct alias for created courses
+        {
+          model: db.Course,
+          as: 'createdCourses',
+          include: [
+            {
+              model: db.Review,
+              as: 'reviews', // Include reviews for each course
+            },
+          ],
+        },
       ],
     });
 
@@ -160,9 +169,13 @@ app.get("/educator/dashboard", async (req, res) => {
       return res.status(404).send('Educator not found');
     }
 
+    // Flatten reviews from all courses
+    const reviews = educator.createdCourses.flatMap(course => course.reviews);
+
     res.render("educatorDashboard", {
       educatorName: educator.name,
       courses: educator.createdCourses,
+      reviews: reviews, // Pass reviews to the view
       csrfToken: req.csrfToken(),
     });
   } catch (error) {

@@ -11,7 +11,18 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
+      Course.belongsTo(models.User, {
+        foreignKey: 'educatorId', 
+        as: 'educator',   
+      });
+
       Course.hasMany(models.Enrollment, { foreignKey: 'courseId' });
+
+      // A Course can have many Reviews
+      Course.hasMany(models.Review, {
+        foreignKey: 'courseId',
+        as: 'reviews', // Alias for reviews
+      });
     }
   }
   Course.init({
