@@ -113,7 +113,6 @@ app.post('/api/:role/signup', async (req, res) => {
   }
 });
 
-// Student Dashboard
 app.get("/student/dashboard", async (req, res) => {
   if (!req.session.user || req.session.user.role !== 'student') {
     return res.redirect("/student/login");
@@ -122,8 +121,8 @@ app.get("/student/dashboard", async (req, res) => {
   try {
     const student = await db.User.findByPk(req.session.user.id, {
       include: [
-        { model: db.Course, as: 'enrolledCourses' }, // Correct alias for enrolled courses
-        { model: db.Certificate, as: 'certificates' }, // Correct alias for certificates
+        { model: db.Course, as: 'enrolledCourses' },
+        { model: db.Certificate, as: 'certificates' },
       ],
     });
 
@@ -131,10 +130,17 @@ app.get("/student/dashboard", async (req, res) => {
       return res.status(404).send('Student not found');
     }
 
+    const availableCourses = await db.Course.findAll({
+      where: {
+        id: { [db.Sequelize.Op.notIn]: student.enrolledCourses.map(course => course.id) },
+      },
+    });
+
     res.render("studentDashboard", {
       studentName: student.name,
       enrolledCourses: student.enrolledCourses,
       certificates: student.certificates,
+      availableCourses: availableCourses, // Ensure this line is included
       csrfToken: req.csrfToken(),
     });
   } catch (error) {
@@ -142,6 +148,7 @@ app.get("/student/dashboard", async (req, res) => {
     res.status(500).send('Internal server error');
   }
 });
+
 
 // Educator Dashboard
 app.get("/educator/dashboard", async (req, res) => {
