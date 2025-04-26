@@ -225,6 +225,60 @@ app.post("/educator/course/new", async (req, res) => {
   }
 });
 
+app.get("/educator/courses/:id/edit", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  const courseId = req.params.id;
+
+  try {
+    const course = await db.Course.findOne({
+      where: { id: courseId, educatorId: req.session.user.id }, // Ensure the course belongs to the logged-in educator
+    });
+
+    if (!course) {
+      return res.status(404).send("Course not found");
+    }
+
+    res.render("editCourseForm", {
+      course,
+      csrfToken: req.csrfToken(), // Include CSRF token for form submission
+    });
+  } catch (error) {
+    console.error("Error occurred while fetching course details:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.post("/educator/courses/:id/edit", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  const courseId = req.params.id;
+  const { title, description } = req.body;
+
+  try {
+    const course = await db.Course.findOne({
+      where: { id: courseId, educatorId: req.session.user.id }, // Ensure the course belongs to the logged-in educator
+    });
+
+    if (!course) {
+      return res.status(404).send("Course not found");
+    }
+
+    // Update the course details
+    await course.update({ title, description });
+
+    // Redirect back to the educator dashboard
+    res.redirect("/educator/dashboard");
+  } catch (error) {
+    console.error("Error occurred while updating course:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
 // Test Database Connection
 db.sequelize.authenticate()
   .then(() => {

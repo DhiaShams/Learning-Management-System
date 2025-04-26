@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Edit Course</title>
+  <meta name="csrf-token" content="<%= csrfToken %>" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-50 font-sans">
+  <div class="max-w-4xl mx-auto mt-8 p-4 bg-white shadow rounded">
+    <h1 class="text-2xl font-bold mb-6">Edit Course</h1>
+    <form method="POST" action="/educator/courses/<%= course.id %>/edit">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <div class="mb-4">
+        <label for="title" class="block text-sm font-medium text-gray-700">Course Title</label>
+        <input type="text" id="title" name="title" value="<%= course.title %>" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm">
+      </div>
+      <div class="mb-4">
+        <label for="description" class="block text-sm font-medium text-gray-700">Course Description</label>
+        <textarea id="description" name="description" required class="mt-1 block w-full border-gray-300 rounded-md shadow-sm"><%= course.description %></textarea>
+      </div>
+      <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-500 transition">Save Changes</button>
+    </form>
+    <a href="/educator/dashboard" class="mt-4 inline-block text-purple-600 hover:underline">Cancel</a>
+  </div>
+</body>
+</html>
