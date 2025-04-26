@@ -184,6 +184,40 @@ app.get("/educator/dashboard", async (req, res) => {
   }
 });
 
+app.get("/educator/course/new", (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  res.render("courseForm", {
+    formTitle: "Create New Course",
+    formAction: "/educator/course/new",
+    buttonLabel: "Create Course",
+    csrfToken: req.csrfToken(), // Include CSRF token for form submission
+  });
+});
+
+app.post("/educator/course/new", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  const { title, description } = req.body;
+
+  try {
+    await db.Course.create({
+      title,
+      description,
+      educatorId: req.session.user.id, // Ensure this matches the foreign key in the Course model
+    });
+
+    res.redirect("/educator/dashboard");
+  } catch (error) {
+    console.error("Error occurred while creating a new course:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
 // Test Database Connection
 db.sequelize.authenticate()
   .then(() => {
