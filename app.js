@@ -28,6 +28,13 @@ app.get('/csrf-token', (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
+app.get('/', (req, res) => {
+  res.render('index', {
+    role: null,
+    csrfToken: req.csrfToken(),
+  });
+});
+
 // Render login/signup form with CSRF token
 app.get('/:role', (req, res) => {
   const { role } = req.params;
@@ -156,6 +163,7 @@ app.get("/educator/dashboard", async (req, res) => {
     res.render("educatorDashboard", {
       educatorName: educator.name,
       courses: educator.createdCourses,
+      csrfToken: req.csrfToken(),
     });
   } catch (error) {
     console.error('Error occurred while rendering educator dashboard:', error);
