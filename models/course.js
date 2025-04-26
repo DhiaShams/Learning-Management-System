@@ -23,6 +23,12 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: 'courseId',
         as: 'reviews', // Alias for reviews
       });
+
+      Course.hasMany(models.Lesson, {
+        foreignKey: 'courseId',
+        as: 'lessons',
+        onDelete: 'CASCADE',
+      });
     }
   }
   Course.init({

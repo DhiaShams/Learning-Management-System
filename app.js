@@ -279,6 +279,156 @@ app.post("/educator/courses/:id/edit", async (req, res) => {
   }
 });
 
+app.get("/educator/courses/:id/lessons", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  const courseId = req.params.id;
+
+  try {
+    const course = await db.Course.findOne({
+      where: { id: courseId, educatorId: req.session.user.id },
+      include: [{ model: db.Lesson, as: 'lessons', include: [{ model: db.Page, as: 'pages' }] }],
+    });
+
+    if (!course) {
+      return res.status(404).send("Course not found");
+    }
+
+    res.render("lessons", {
+      course,
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.error("Error occurred while fetching lessons:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.post("/educator/courses/:id/lessons", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  const courseId = req.params.id;
+  const { title } = req.body;
+
+  try {
+    await db.Lesson.create({
+      title,
+      courseId,
+    });
+
+    res.redirect(`/educator/courses/${courseId}/lessons`);
+  } catch (error) {
+    console.error("Error occurred while creating a lesson:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.get("/educator/lessons/:id/pages", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  const lessonId = req.params.id;
+
+  try {
+    const lesson = await db.Lesson.findOne({
+      where: { id: lessonId },
+      include: [{ model: db.Page, as: 'pages' }],
+    });
+
+    if (!lesson) {
+      return res.status(404).send("Lesson not found");
+    }
+
+    res.render("pages", {
+      lesson,
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.error("Error occurred while fetching pages:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.post("/educator/lessons/:id/pages", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  const lessonId = req.params.id;
+  const { title, content } = req.body;
+
+  try {
+    // Create a new page associated with the lesson
+    await db.Page.create({
+      title,
+      content,
+      lessonId,
+    });
+
+    // Redirect back to the lessons page for the course
+    const lesson = await db.Lesson.findByPk(lessonId);
+    res.redirect(`/educator/courses/${lesson.courseId}/lessons`);
+  } catch (error) {
+    console.error("Error occurred while creating a page:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.get("/educator/pages/:id/edit", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  const pageId = req.params.id;
+
+  try {
+    const page = await db.Page.findByPk(pageId, {
+      include: [{ model: db.Lesson, as: 'lesson', include: [{ model: db.Course, as: 'course' }] }],
+    });
+
+    if (!page) {
+      return res.status(404).send("Page not found");
+    }
+
+    res.render("editPage", {
+      page,
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.error("Error occurred while fetching the page:", error);
+    res.status(500).send("Internal server error");
+  }
+});app.post("/educator/pages/:id/edit", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  const pageId = req.params.id;
+  const { title, content } = req.body;
+
+  try {
+    const page = await db.Page.findByPk(pageId);
+
+    if (!page) {
+      return res.status(404).send("Page not found");
+    }
+
+    // Update the page details
+    await page.update({ title, content });
+
+    // Redirect back to the lessons page for the course
+    const lesson = await db.Lesson.findByPk(page.lessonId);
+    res.redirect(`/educator/courses/${lesson.courseId}/lessons`);
+  } catch (error) {
+    console.error("Error occurred while updating the page:", error);
+    res.status(500).send("Internal server error");
+  }
+});
 // Test Database Connection
 db.sequelize.authenticate()
   .then(() => {

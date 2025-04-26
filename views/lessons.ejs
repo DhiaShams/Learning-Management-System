@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Lessons - <%= course.title %></title>
+  <meta name="csrf-token" content="<%= csrfToken %>" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-50 font-sans">
+  <nav class="bg-purple-700 text-white px-6 py-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold">Manage Lessons for <%= course.title %></h1>
+    <a href="/educator/dashboard" class="bg-white text-purple-700 px-4 py-2 rounded hover:bg-gray-100 transition">Back to Dashboard</a>
+  </nav>
+
+  <main class="max-w-6xl mx-auto mt-8 p-4">
+    <!-- Add New Lesson -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold mb-4">Add New Lesson</h2>
+      <form method="POST" action="/educator/courses/<%= course.id %>/lessons" class="space-y-4">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <div>
+          <label class="block text-sm font-medium text-gray-700">Lesson Title</label>
+          <input type="text" name="title" placeholder="Lesson Title" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+        </div>
+        <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-500 transition">Add Lesson</button>
+      </form>
+    </section>
+
+    <!-- Existing Lessons -->
+    <section>
+      <h2 class="text-2xl font-semibold mb-4">Existing Lessons</h2>
+
+      <% if (course.lessons && course.lessons.length === 0) { %>
+        <p class="text-gray-600">No lessons added yet.</p>
+      <% } else { %>
+        <ul class="space-y-8">
+          <% course.lessons.forEach(lesson => { %>
+            <li class="bg-white p-6 rounded-lg shadow-md">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h3 class="text-lg font-semibold"><%= lesson.title %></h3>
+                </div>
+                <a href="/educator/lessons/<%= lesson.id %>/pages" class="text-blue-600 hover:underline font-medium">Manage Pages</a>
+              </div>
+
+              <!-- Pages under each lesson -->
+<% if (lesson.pages && lesson.pages.length > 0) { %>
+    <ul class="space-y-2 pl-6 border-l-2 border-gray-300">
+      <% lesson.pages.forEach(page => { %>
+        <li class="mt-2">
+          <div class="flex justify-between items-center">
+            <div>
+              <h4 class="text-md font-semibold"><%= page.title %></h4>
+              <p class="text-gray-600"><%= page.content %></p>
+            </div>
+            <a href="/educator/pages/<%= page.id %>/edit" class="text-blue-600 hover:underline font-medium">Edit</a>
+          </div>
+        </li>
+      <% }); %>
+    </ul>
+  <% } else { %>
+    <p class="text-gray-500 italic">No pages added yet for this lesson.</p>
+  <% } %>
+
+              <!-- Add Page Form -->
+              <form method="POST" action="/educator/lessons/<%= lesson.id %>/pages" class="mt-6 space-y-4">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <div>
+                  <input type="text" name="title" placeholder="Page Title" required class="block w-full border border-gray-300 rounded-md shadow-sm p-2">
+                </div>
+                <div>
+                  <textarea name="content" placeholder="Page Content" required class="block w-full border border-gray-300 rounded-md shadow-sm p-2"></textarea>
+                </div>
+                <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-400 transition">Add Page</button>
+              </form>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>

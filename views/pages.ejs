@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Pages - <%= lesson.title %></title>
+  <meta name="csrf-token" content="<%= csrfToken %>" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-50 font-sans">
+  <nav class="bg-purple-700 text-white px-6 py-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold">Manage Pages for <%= lesson.title %></h1>
+    <a href="/educator/dashboard" class="bg-white text-purple-700 px-4 py-2 rounded hover:bg-gray-100 transition">Back to Dashboard</a>
+  </nav>
+
+  <main class="max-w-4xl mx-auto mt-8 p-4">
+    <section class="mb-8">
+      <h2 class="text-2xl font-semibold mb-4">Add New Page</h2>
+      <form action="/educator/lessons/<%= lesson.id %>/pages" method="POST" class="space-y-4">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <div>
+          <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+          <input type="text" name="title" id="title" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm" />
+        </div>
+        <div>
+          <label for="content" class="block text-sm font-medium text-gray-700">Content</label>
+          <textarea name="content" id="content" rows="5" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm"></textarea>
+        </div>
+        <button type="submit" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-500 transition">Add Page</button>
+      </form>
+    </section>
+
+    <section>
+      <h2 class="text-2xl font-semibold mb-4">Existing Pages</h2>
+      <% if (lesson.pages && lesson.pages.length === 0) { %>
+        <p class="text-gray-600">No pages added yet.</p>
+      <% } else { %>
+        <ul class="space-y-4">
+          <% lesson.pages.forEach(page => { %>
+            <li class="bg-white p-4 rounded-lg shadow-md">
+              <h3 class="text-lg font-semibold"><%= page.title %></h3>
+              <p class="text-gray-700"><%= page.content %></p>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>
