@@ -11,7 +11,10 @@
 
   <nav class="bg-purple-700 text-white px-6 py-4 flex justify-between items-center">
     <h1 class="text-xl font-bold">LMS Educator Dashboard</h1>
-    <a href="/logout" class="bg-white text-purple-700 px-4 py-2 rounded hover:bg-gray-100 transition">Logout</a>
+    <form action="/logout" method="POST" class="bg-white text-blue-600 px-4 py-2 rounded hover:bg-gray-200 transition">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit">Logout</button>
+    </form>
   </nav>
 
   <main class="max-w-6xl mx-auto mt-8 p-4">

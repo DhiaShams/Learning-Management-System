@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Page Details - <%= page.title %></title>
+  <meta name="csrf-token" content="<%= csrfToken %>" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-50 font-sans">
+  <nav class="bg-blue-600 text-white px-6 py-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold">Page Details - <%= page.title %></h1>
+    <a href="/courses/<%= page.lesson.courseId %>/lessons/<%= page.lesson.id %>" class="bg-white text-blue-600 px-4 py-2 rounded hover:bg-gray-200 transition">Back to Lesson</a>
+  </nav>
+
+  <main class="max-w-4xl mx-auto mt-8 p-4">
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold mb-4"><%= page.title %></h2>
+      <p class="text-gray-600"><%= page.content %></p>
+    </section>
+
+    <form method="POST" action="/pages/<%= page.id %>/complete">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-500 transition">
+        Mark as Completed
+      </button>
+    </form>
+  </main>
+</body>
+</html>

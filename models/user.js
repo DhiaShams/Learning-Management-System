@@ -41,6 +41,8 @@ module.exports = (sequelize, DataTypes) => {
           foreignKey: 'educatorId',
           as: 'createdCourses', 
       });
+
+      User.hasMany(models.PageCompletion, { as: "pageCompletions", foreignKey: "userId" });
     }
   }
 

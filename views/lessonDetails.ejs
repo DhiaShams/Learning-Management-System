@@ -22,14 +22,27 @@
       <% } else { %>
         <ul class="space-y-8">
           <% lesson.pages.forEach(page => { %>
-            <li class="bg-white p-6 rounded-lg shadow-md">
-              <h3 class="text-lg font-semibold mb-4"><%= page.title %></h3>
-              <p class="text-gray-600"><%= page.content %></p>
+            <li class="bg-white p-6 rounded-lg shadow-md flex justify-between items-center">
+              <h3 class="text-lg font-semibold mb-4">
+                <a href="/lessons/<%= lesson.id %>/pages/<%= page.id %>" class="text-blue-600 hover:underline">
+                  <%= page.title %>
+                </a>
+              </h3>
+              <% if (page.completions.length > 0) { %>
+                <!-- Show a tick for completed pages -->
+                <span class="text-green-600 font-bold">✔</span>
+              <% } %>
             </li>
           <% }); %>
         </ul>
       <% } %>
     </section>
+
+    <% if (isLessonCompleted) { %>
+      <div class="bg-green-100 text-green-800 px-4 py-2 rounded">
+        <strong>Lesson Completed!</strong>
+      </div>
+    <% } %>
   </main>
 </body>
 </html>

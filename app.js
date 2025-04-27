@@ -28,6 +28,8 @@ app.get('/csrf-token', (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
+const { sequelize } = require('./models');
+
 app.get('/', (req, res) => {
   res.render('index', {
     role: null,
@@ -121,34 +123,55 @@ app.get("/student/dashboard", async (req, res) => {
   try {
     const student = await db.User.findByPk(req.session.user.id, {
       include: [
-        { model: db.Course, as: 'enrolledCourses' },
-        { model: db.Certificate, as: 'certificates' },
+        {
+          model: db.Course,
+          as: 'enrolledCourses',
+          include: [
+            {
+              model: db.Lesson,
+              as: 'lessons',
+              attributes: ['id'],
+              order: [['id', 'ASC']], // Ensure lessons are ordered
+            },{
+              model: db.User,
+              as: 'educator', // Include the educator who created the course
+              attributes: ['name'],},
+          ],
+        },{ model: db.Certificate, as: 'certificates' },
       ],
     });
-
-    if (!student) {
-      return res.status(404).send('Student not found');
-    }
 
     const availableCourses = await db.Course.findAll({
       where: {
         id: { [db.Sequelize.Op.notIn]: student.enrolledCourses.map(course => course.id) },
       },
+      include: [
+        {
+          model: db.User,
+          as: 'educator', // Include the educator who created the course
+          attributes: ['name'], // Fetch only the educator's name
+        },
+      ],
+    });
+    // Add the first lesson ID for each enrolled course
+    student.enrolledCourses.forEach(course => {
+      course.firstLessonId = course.lessons.length > 0 ? course.lessons[0].id : null;
     });
 
     res.render("studentDashboard", {
       studentName: student.name,
       enrolledCourses: student.enrolledCourses,
       certificates: student.certificates,
-      availableCourses: availableCourses, // Ensure this line is included
+      availableCourses: availableCourses,
       csrfToken: req.csrfToken(),
     });
   } catch (error) {
-    console.error('Error occurred while rendering student dashboard:', error);
-    res.status(500).send('Internal server error');
+    console.error("Error occurred while rendering student dashboard:", error);
+    res.status(500).send("Internal server error");
   }
 });
-
+// { model: db.Certificate, as: 'certificates' },
+// certificates: student.certificates,
 app.get("/courses/:id", async (req, res) => {
   if (!req.session.user || req.session.user.role !== 'student') {
     return res.redirect("/student/login");
@@ -215,22 +238,68 @@ app.get("/courses/:courseId/lessons/:lessonId", async (req, res) => {
       return res.status(403).send("You are not enrolled in this course.");
     }
 
-    // Fetch the lesson details, including its pages
+    // Fetch the lesson details, including its pages and their completion status
     const lesson = await db.Lesson.findOne({
       where: { id: lessonId, courseId: courseId },
-      include: [{ model: db.Page, as: "pages" }],
+      include: [
+        {
+          model: db.Page,
+          as: "pages",
+          include: [
+            {
+              model: db.PageCompletion,
+              as: "completions",
+              where: { userId: req.session.user.id },
+              required: false, // Include even if no completion exists
+            },
+          ],
+        },
+      ],
     });
 
     if (!lesson) {
       return res.status(404).send("Lesson not found");
     }
 
+    // Check if the lesson is completed
+    const completedPages = lesson.pages.filter(page => page.completions.length > 0);
+    const isLessonCompleted = completedPages.length === lesson.pages.length;
+
     res.render("lessonDetails", {
       lesson,
+      isLessonCompleted,
       csrfToken: req.csrfToken(),
     });
   } catch (error) {
-    console.error("Error occurred while fetching lesson details:", error);
+    console.error("Error occurred while fetching lesson details:", error); // Log the error
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.get("/lessons/:lessonId/pages/:pageId", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'student') {
+    return res.redirect("/student/login");
+  }
+
+  const { lessonId, pageId } = req.params;
+
+  try {
+    // Fetch the page details
+    const page = await db.Page.findOne({
+      where: { id: pageId, lessonId: lessonId },
+      include: [{ model: db.Lesson, as: "lesson" }],
+    });
+
+    if (!page) {
+      return res.status(404).send("Page not found");
+    }
+
+    res.render("pageDetails", {
+      page,
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.error("Error occurred while fetching page details:", error);
     res.status(500).send("Internal server error");
   }
 });
@@ -264,6 +333,93 @@ app.post("/courses/:id/enroll", async (req, res) => {
     res.redirect(`/courses/${courseId}`);
   } catch (error) {
     console.error("Error occurred while enrolling in the course:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.post("/pages/:pageId/complete", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'student') {
+    return res.redirect("/student/login");
+  }
+
+  const { pageId } = req.params;
+
+  try {
+    // Mark the page as completed for the student
+    await db.PageCompletion.findOrCreate({
+      where: {
+        userId: req.session.user.id,
+        pageId: pageId,
+      },
+    });
+
+    // Fetch the page, its lesson, and the lesson's pages
+    const page = await db.Page.findByPk(pageId, {
+      include: [{
+        model: db.Lesson,
+        as: "lesson",
+        include: [{
+          model: db.Page,
+          as: "pages"
+        }]
+      }]
+    });
+
+    if (!page) {
+      return res.status(404).send("Page not found");
+    }
+
+    const lesson = page.lesson;
+
+    // Check if all pages in the lesson are completed
+    const completedPageIds = await db.PageCompletion.findAll({
+      where: {
+        userId: req.session.user.id,
+        pageId: lesson.pages.map(p => p.id),
+      },
+      attributes: ['pageId']
+    });
+
+    if (completedPageIds.length === lesson.pages.length) {
+      // Mark the lesson as completed
+      await db.LessonCompletion.findOrCreate({
+        where: {
+          userId: req.session.user.id,
+          lessonId: lesson.id,
+        },
+      });
+
+      // Fetch the course and its lessons
+      const course = await db.Course.findByPk(lesson.courseId, {
+        include: [{
+          model: db.Lesson,
+          as: "lessons"
+        }]
+      });
+
+      const completedLessonIds = await db.LessonCompletion.findAll({
+        where: {
+          userId: req.session.user.id,
+          lessonId: course.lessons.map(l => l.id),
+        },
+        attributes: ['lessonId']
+      });
+
+      if (completedLessonIds.length === course.lessons.length) {
+        // Mark the course as completed
+        await db.CourseCompletion.findOrCreate({
+          where: {
+            userId: req.session.user.id,
+            courseId: course.id,
+          },
+        });
+      }
+    }
+
+    // Redirect back to lesson page listing (good UX)
+    res.redirect(`/courses/${lesson.courseId}/lessons/${lesson.id}`);
+  } catch (error) {
+    console.error("Error occurred while marking page as completed:", error);
     res.status(500).send("Internal server error");
   }
 });
@@ -521,7 +677,9 @@ app.get("/educator/pages/:id/edit", async (req, res) => {
     console.error("Error occurred while fetching the page:", error);
     res.status(500).send("Internal server error");
   }
-});app.post("/educator/pages/:id/edit", async (req, res) => {
+});
+
+app.post("/educator/pages/:id/edit", async (req, res) => {
   if (!req.session.user || req.session.user.role !== 'educator') {
     return res.redirect("/educator/login");
   }
@@ -547,6 +705,17 @@ app.get("/educator/pages/:id/edit", async (req, res) => {
     res.status(500).send("Internal server error");
   }
 });
+
+app.post('/logout', (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      console.error("Error during logout:", err);
+      return res.status(500).send("Internal server error");
+    }
+    res.redirect('/');
+  });
+});
+
 // Test Database Connection
 db.sequelize.authenticate()
   .then(() => {

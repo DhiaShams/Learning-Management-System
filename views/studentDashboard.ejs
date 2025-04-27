@@ -11,7 +11,10 @@
 
   <nav class="bg-blue-600 text-white px-6 py-4 flex justify-between items-center">
     <h1 class="text-xl font-bold">LMS Student Dashboard</h1>
-    <a href="/logout" class="bg-white text-blue-600 px-4 py-2 rounded hover:bg-gray-200 transition">Logout</a>
+    <form action="/logout" method="POST" class="bg-white text-blue-600 px-4 py-2 rounded hover:bg-gray-200 transition">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit">Logout</button>
+    </form>  
   </nav>
 
   <main class="max-w-5xl mx-auto mt-8 p-4">
@@ -29,12 +32,13 @@
             <div class="bg-white shadow-lg rounded-2xl p-6">
               <h4 class="text-lg font-semibold mb-2"><%= course.title %></h4>
               <p class="text-gray-600 mb-2"><%= course.description %></p>
+              <p class="text-sm text-gray-500 mb-4">Created by: <%= course.educator.name %></p>
               <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
-                <div class="bg-blue-500 h-3 rounded-full transition-all duration-300" style="width: <%= course.progress %>%"></div>
+                <div class="bg-blue-500 h-3 rounded-full transition-all duration-300" style="width: '<%= course.progress %>%'"></div>
               </div>
               <div class="flex justify-between">
                 <span class="text-sm text-gray-700"><%= course.progress %>% completed</span>
-                <a href="/courses/<%= course.id %>/continue" class="text-sm text-blue-600 hover:underline">Continue</a>
+                <a href="/courses/<%= course.id %>/lessons/<%= course.firstLessonId %>" class="text-sm text-blue-600 hover:underline">Start Learning</a>
               </div>
             </div>
           <% }); %>
@@ -42,35 +46,28 @@
       <% } %>
     </section>
 
-    <!-- Section: Explore Available Courses -->
-    <section class="mb-10">
-      <h3 class="text-xl font-bold mb-4">Explore Available Courses</h3>
+      <!-- Section: Explore Available Courses -->
+      <section class="mb-10">
+        <h3 class="text-xl font-bold mb-4">Explore Available Courses</h3>
 
-      <% if (availableCourses && availableCourses.length === 0) { %>
-        <p class="text-gray-600">No courses are available for enrollment at the moment.</p>
-      <% } else { %>
-        <div class="grid md:grid-cols-2 gap-6">
-          <% availableCourses.forEach(course => { %>
-            <div class="bg-white shadow-lg rounded-2xl p-6">
-              <h4 class="text-lg font-semibold mb-2"><%= course.title %></h4>
-              <p class="text-gray-600 mb-2"><%= course.description %></p>
-
-              <% const isEnrolled = enrolledCourses.some(enrolled => enrolled.id === course.id); %>
-              <% if (isEnrolled) { %>
-                <button class="bg-green-500 text-white px-4 py-2 rounded cursor-not-allowed">Enrolled</button>
-              <% } else { %>
-                <form method="POST" action="/courses/<%= course.id %>/enroll">
+        <% if (availableCourses && availableCourses.length === 0) { %>
+          <p class="text-gray-600">No courses are available for enrollment at the moment.</p>
+        <% } else { %>
+          <div class="grid md:grid-cols-2 gap-6">
+            <% availableCourses.forEach(course => { %>
+              <div class="bg-white shadow-lg rounded-2xl p-6">
+                <h4 class="text-lg font-semibold mb-2"><%= course.title %></h4>
+                <p class="text-gray-600 mb-4"><%= course.description %></p>
+                <p class="text-sm text-gray-500 mb-4">Created by: <%= course.educator.name %></p>
+                <form action="/courses/<%= course.id %>/enroll" method="POST">
                   <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                   <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 transition">Enroll</button>
                 </form>
-              <% } %>
-
-            </div>
-          <% }); %>
-        </div>
-      <% } %>
-
-    </section>
+              </div>
+            <% }); %>
+          </div>
+        <% } %>
+      </section>
 
     <!-- Section: Certificates -->
     <section>
@@ -85,7 +82,7 @@
                 Certificate for <%= cert.courseTitle %>
               </a>
             </li>
-          <% }) %>
+          <% }); %>
         </ul>
       <% } %>
     </section>
