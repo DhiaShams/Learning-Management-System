@@ -21,14 +21,20 @@
         <p class="text-gray-600">No lessons available for this course.</p>
       <% } else { %>
         <ul class="space-y-8">
-            <% course.lessons.forEach(lesson => { %>
-              <li class="bg-white p-6 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold mb-4">
-                  <a href="/courses/<%= course.id %>/lessons/<%= lesson.id %>" class="text-blue-600 hover:underline"><%= lesson.title %></a>
-                </h3>
-              </li>
-            <% }); %>
-          </ul>
+          <% course.lessons.forEach(lesson => { %>
+            <li class="bg-white p-6 rounded-lg shadow-md flex justify-between items-center">
+              <h3 class="text-lg font-semibold mb-4">
+                <a href="/courses/<%= course.id %>/lessons/<%= lesson.id %>" class="text-blue-600 hover:underline">
+                  <%= lesson.title %>
+                </a>
+              </h3>
+              <% if (lesson.completions && lesson.completions.length > 0) { %>
+                <!-- Show a tick for completed lessons -->
+                <span class="text-green-600 font-bold">✔</span>
+              <% } %>
+            </li>
+          <% }); %>
+        </ul>
       <% } %>
     </section>
   </main>
