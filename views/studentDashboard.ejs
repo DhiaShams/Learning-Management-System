@@ -54,14 +54,22 @@
             <div class="bg-white shadow-lg rounded-2xl p-6">
               <h4 class="text-lg font-semibold mb-2"><%= course.title %></h4>
               <p class="text-gray-600 mb-2"><%= course.description %></p>
-              <form method="POST" action="/courses/<%= course.id %>/enroll">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 transition">Enroll</button>
-              </form>
+
+              <% const isEnrolled = enrolledCourses.some(enrolled => enrolled.id === course.id); %>
+              <% if (isEnrolled) { %>
+                <button class="bg-green-500 text-white px-4 py-2 rounded cursor-not-allowed">Enrolled</button>
+              <% } else { %>
+                <form method="POST" action="/courses/<%= course.id %>/enroll">
+                  <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                  <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 transition">Enroll</button>
+                </form>
+              <% } %>
+
             </div>
           <% }); %>
         </div>
       <% } %>
+
     </section>
 
     <!-- Section: Certificates -->

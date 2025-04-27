@@ -149,6 +149,124 @@ app.get("/student/dashboard", async (req, res) => {
   }
 });
 
+app.get("/courses/:id", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'student') {
+    return res.redirect("/student/login");
+  }
+
+  const courseId = req.params.id;
+
+  try {
+    // Check if the student is enrolled in the course
+    const enrollment = await db.Enrollment.findOne({
+      where: {
+        userId: req.session.user.id,
+        courseId: courseId,
+      },
+    });
+
+    if (!enrollment) {
+      return res.status(403).send("You are not enrolled in this course.");
+    }
+
+    // Fetch the course details, including lessons and pages
+    const course = await db.Course.findOne({
+      where: { id: courseId },
+      include: [
+        {
+          model: db.Lesson,
+          as: "lessons",
+          include: [{ model: db.Page, as: "pages" }],
+        },
+      ],
+    });
+
+    if (!course) {
+      return res.status(404).send("Course not found");
+    }
+
+    res.render("courseDetails", {
+      course,
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.error("Error occurred while fetching course details:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.get("/courses/:courseId/lessons/:lessonId", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'student') {
+    return res.redirect("/student/login");
+  }
+
+  const { courseId, lessonId } = req.params;
+
+  try {
+    // Check if the student is enrolled in the course
+    const enrollment = await db.Enrollment.findOne({
+      where: {
+        userId: req.session.user.id,
+        courseId: courseId,
+      },
+    });
+
+    if (!enrollment) {
+      return res.status(403).send("You are not enrolled in this course.");
+    }
+
+    // Fetch the lesson details, including its pages
+    const lesson = await db.Lesson.findOne({
+      where: { id: lessonId, courseId: courseId },
+      include: [{ model: db.Page, as: "pages" }],
+    });
+
+    if (!lesson) {
+      return res.status(404).send("Lesson not found");
+    }
+
+    res.render("lessonDetails", {
+      lesson,
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.error("Error occurred while fetching lesson details:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.post("/courses/:id/enroll", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'student') {
+    return res.redirect("/student/login");
+  }
+
+  const courseId = req.params.id;
+
+  try {
+    // Check if the student is already enrolled
+    const existingEnrollment = await db.Enrollment.findOne({
+      where: {
+        userId: req.session.user.id,
+        courseId: courseId,
+      },
+    });
+
+    if (existingEnrollment) {
+      return res.redirect(`/courses/${courseId}`);
+    }
+
+    // Enroll the student in the course
+    await db.Enrollment.create({
+      userId: req.session.user.id,
+      courseId: courseId,
+    });
+
+    res.redirect(`/courses/${courseId}`);
+  } catch (error) {
+    console.error("Error occurred while enrolling in the course:", error);
+    res.status(500).send("Internal server error");
+  }
+});
 
 // Educator Dashboard
 app.get("/educator/dashboard", async (req, res) => {
