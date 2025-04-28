@@ -43,6 +43,7 @@ module.exports = (sequelize, DataTypes) => {
       });
 
       User.hasMany(models.PageCompletion, { as: "pageCompletions", foreignKey: "userId" });
+      User.hasMany(models.LessonCompletion, { as: "lessonCompletions", foreignKey: "userId" });
     }
   }
 

@@ -192,14 +192,21 @@ app.get("/courses/:id", async (req, res) => {
       return res.status(403).send("You are not enrolled in this course.");
     }
 
-    // Fetch the course details, including lessons and pages
+    // Fetch the course details, including lessons and their completions
     const course = await db.Course.findOne({
       where: { id: courseId },
       include: [
         {
           model: db.Lesson,
           as: "lessons",
-          include: [{ model: db.Page, as: "pages" }],
+          include: [
+            {
+              model: db.LessonCompletion,
+              as: "completions",
+              where: { userId: req.session.user.id },
+              required: false, // Include even if no completion exists
+            },
+          ],
         },
       ],
     });
@@ -208,8 +215,14 @@ app.get("/courses/:id", async (req, res) => {
       return res.status(404).send("Course not found");
     }
 
+    // Check if all lessons in the course are completed
+    const isCourseCompleted = course.lessons.every(
+      (lesson) => lesson.completions && lesson.completions.length > 0
+    );
+
     res.render("courseDetails", {
       course,
+      isCourseCompleted, // Pass the variable to the view
       csrfToken: req.csrfToken(),
     });
   } catch (error) {
@@ -420,6 +433,71 @@ app.post("/pages/:pageId/complete", async (req, res) => {
     res.redirect(`/courses/${lesson.courseId}/lessons/${lesson.id}`);
   } catch (error) {
     console.error("Error occurred while marking page as completed:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.post("/lessons/:lessonId/complete", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'student') {
+    return res.redirect("/student/login");
+  }
+
+  const { lessonId } = req.params;
+
+  try {
+    // Mark the lesson as completed for the student
+    await db.LessonCompletion.findOrCreate({
+      where: {
+        userId: req.session.user.id,
+        lessonId: lessonId,
+      },
+    });
+
+    // Fetch the lesson and its associated course
+    const lesson = await db.Lesson.findByPk(lessonId, {
+      include: [
+        {
+          model: db.Course,
+          as: "course",
+          include: [
+            {
+              model: db.Lesson,
+              as: "lessons",
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!lesson) {
+      return res.status(404).send("Lesson not found");
+    }
+
+    const course = lesson.course;
+
+    // Check if all lessons in the course are completed
+    const completedLessonIds = await db.LessonCompletion.findAll({
+      where: {
+        userId: req.session.user.id,
+        lessonId: course.lessons.map((l) => l.id),
+      },
+      attributes: ["lessonId"],
+    });
+
+    if (completedLessonIds.length === course.lessons.length) {
+      // Mark the course as completed
+      await db.CourseCompletion.findOrCreate({
+        where: {
+          userId: req.session.user.id,
+          courseId: course.id,
+        },
+      });
+    }
+
+    // Redirect back to the course details page
+    res.redirect(`/courses/${course.id}`);
+  } catch (error) {
+    console.error("Error occurred while marking lesson as completed:", error);
     res.status(500).send("Internal server error");
   }
 });

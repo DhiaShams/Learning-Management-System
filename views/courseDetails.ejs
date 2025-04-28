@@ -37,6 +37,11 @@
         </ul>
       <% } %>
     </section>
+    <% if (isCourseCompleted) { %>
+      <div class="bg-green-100 text-green-800 px-4 py-2 rounded">
+        <strong>Course Completed!</strong>
+      </div>
+    <% } %>
   </main>
 </body>
 </html>
