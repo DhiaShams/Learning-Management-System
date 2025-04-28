@@ -34,11 +34,12 @@
               <p class="text-gray-600 mb-2"><%= course.description %></p>
               <p class="text-sm text-gray-500 mb-4">Created by: <%= course.educator.name %></p>
               <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
-                <div class="bg-blue-500 h-3 rounded-full transition-all duration-300" style="width: '<%= course.progress || 0 %>%'"></div>
+                <!-- Adjust the width of the progress bar dynamically -->
+                <div class="bg-blue-500 h-3 rounded-full transition-all duration-300" style="width:'<%= course.progress %>%'"></div>
               </div>
               <div class="flex justify-between">
-                <span class="text-sm text-gray-700"><%= course.progress || 0 %>% completed</span>
-                <a href="/courses/<%= course.id %>" class="text-sm text-blue-600 hover:underline">Start Learning</a>
+                <span class="text-sm text-gray-700"><%= course.progress %>% completed</span>
+                <a href="/courses/<%= course.id %>" class="text-sm text-blue-600 hover:underline">Continue Learning</a>
               </div>
             </div>
           <% }); %>

@@ -136,18 +136,29 @@ app.get("/student/dashboard", async (req, res) => {
             {
               model: db.Lesson,
               as: "lessons",
-              attributes: ["id"], // Fetch only the lesson IDs
-              order: [["id", "ASC"]], // Ensure lessons are ordered by ID
+              include: [
+                {
+                  model: db.LessonCompletion,
+                  as: "completions",
+                  where: { userId: req.session.user.id },
+                  required: false, // Include even if no completion exists
+                },
+              ],
             },
           ],
         },{ model: db.Certificate, as: 'certificates' },
       ],
     });
 
-    // Add the first lesson ID to each enrolled course
-    student.enrolledCourses.forEach((course) => {
-      course.firstLessonId = course.lessons.length > 0 ? course.lessons[0].id : null;
-    });
+// Calculate progress for each enrolled course
+student.enrolledCourses.forEach((course) => {
+  const totalLessons = course.lessons.length;
+  const completedLessons = course.lessons.filter(
+    (lesson) => lesson.completions && lesson.completions.length > 0
+  ).length;
+
+  course.progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+});
 
     // Fetch available courses (not enrolled by the student)
     const availableCourses = await db.Course.findAll({
