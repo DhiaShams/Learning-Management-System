@@ -121,41 +121,46 @@ app.get("/student/dashboard", async (req, res) => {
   }
 
   try {
+    // Fetch the student and their enrolled courses
     const student = await db.User.findByPk(req.session.user.id, {
       include: [
         {
           model: db.Course,
-          as: 'enrolledCourses',
+          as: "enrolledCourses",
           include: [
             {
-              model: db.Lesson,
-              as: 'lessons',
-              attributes: ['id'],
-              order: [['id', 'ASC']], // Ensure lessons are ordered
-            },{
               model: db.User,
-              as: 'educator', // Include the educator who created the course
-              attributes: ['name'],},
+              as: "educator", // Include the educator who created the course
+              attributes: ["name"], // Fetch only the educator's name
+            },
+            {
+              model: db.Lesson,
+              as: "lessons",
+              attributes: ["id"], // Fetch only the lesson IDs
+              order: [["id", "ASC"]], // Ensure lessons are ordered by ID
+            },
           ],
         },{ model: db.Certificate, as: 'certificates' },
       ],
     });
 
+    // Add the first lesson ID to each enrolled course
+    student.enrolledCourses.forEach((course) => {
+      course.firstLessonId = course.lessons.length > 0 ? course.lessons[0].id : null;
+    });
+
+    // Fetch available courses (not enrolled by the student)
     const availableCourses = await db.Course.findAll({
       where: {
-        id: { [db.Sequelize.Op.notIn]: student.enrolledCourses.map(course => course.id) },
+        id: { [db.Sequelize.Op.notIn]: student.enrolledCourses.map((course) => course.id) },
       },
       include: [
         {
           model: db.User,
-          as: 'educator', // Include the educator who created the course
-          attributes: ['name'], // Fetch only the educator's name
+          as: "educator", // Include the educator who created the course
+          attributes: ["name"], // Fetch only the educator's name
         },
       ],
-    });
-    // Add the first lesson ID for each enrolled course
-    student.enrolledCourses.forEach(course => {
-      course.firstLessonId = course.lessons.length > 0 ? course.lessons[0].id : null;
     });
 
     res.render("studentDashboard", {
@@ -207,6 +212,7 @@ app.get("/courses/:id", async (req, res) => {
               required: false, // Include even if no completion exists
             },
           ],
+          order: [["id", "ASC"]], // Ensure lessons are ordered by ID
         },
       ],
     });
@@ -215,6 +221,9 @@ app.get("/courses/:id", async (req, res) => {
       return res.status(404).send("Course not found");
     }
 
+    // Get the first lesson ID
+    const firstLessonId = course.lessons.length > 0 ? course.lessons[0].id : null;
+
     // Check if all lessons in the course are completed
     const isCourseCompleted = course.lessons.every(
       (lesson) => lesson.completions && lesson.completions.length > 0
@@ -222,6 +231,7 @@ app.get("/courses/:id", async (req, res) => {
 
     res.render("courseDetails", {
       course,
+      firstLessonId, // Pass the first lesson ID to the view
       isCourseCompleted, // Pass the variable to the view
       csrfToken: req.csrfToken(),
     });
@@ -325,25 +335,16 @@ app.post("/courses/:id/enroll", async (req, res) => {
   const courseId = req.params.id;
 
   try {
-    // Check if the student is already enrolled
-    const existingEnrollment = await db.Enrollment.findOne({
+    // Enroll the student in the course
+    await db.Enrollment.findOrCreate({
       where: {
         userId: req.session.user.id,
         courseId: courseId,
       },
     });
 
-    if (existingEnrollment) {
-      return res.redirect(`/courses/${courseId}`);
-    }
-
-    // Enroll the student in the course
-    await db.Enrollment.create({
-      userId: req.session.user.id,
-      courseId: courseId,
-    });
-
-    res.redirect(`/courses/${courseId}`);
+    // Redirect back to the dashboard
+    res.redirect("/student/dashboard");
   } catch (error) {
     console.error("Error occurred while enrolling in the course:", error);
     res.status(500).send("Internal server error");
