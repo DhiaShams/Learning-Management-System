@@ -35,9 +35,10 @@
               <p class="text-sm text-gray-500 mb-4">Created by: <%= course.educator.name %></p>
               <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
                 <!-- Adjust the width of the progress bar dynamically -->
-                <div class="bg-blue-500 h-3 rounded-full transition-all duration-300" style="width:'<%= course.progress %>%'"></div>
+                <div class="bg-blue-500 h-3 rounded-full transition-all duration-300" style="width: <%= course.progress %>%"></div>
               </div>
               <div class="flex justify-between">
+                <!-- Display the progress percentage -->
                 <span class="text-sm text-gray-700"><%= course.progress %>% completed</span>
                 <a href="/courses/<%= course.id %>" class="text-sm text-blue-600 hover:underline">Continue Learning</a>
               </div>
@@ -47,7 +48,7 @@
       <% } %>
     </section>
 
-    <!-- Section: Explore Available Courses -->
+        <!-- Section: Explore Available Courses -->
     <section class="mb-10">
       <h3 class="text-xl font-bold mb-4">Explore Available Courses</h3>
 
@@ -60,10 +61,7 @@
               <h4 class="text-lg font-semibold mb-2"><%= course.title %></h4>
               <p class="text-gray-600 mb-4"><%= course.description %></p>
               <p class="text-sm text-gray-500 mb-4">Created by: <%= course.educator.name %></p>
-              <form action="/courses/<%= course.id %>/enroll" method="POST">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 transition">Enroll</button>
-              </form>
+              <a href="/courses/<%= course.id %>/preview" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 transition">Preview</a>
             </div>
           <% }); %>
         </div>

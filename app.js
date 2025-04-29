@@ -150,15 +150,15 @@ app.get("/student/dashboard", async (req, res) => {
       ],
     });
 
-// Calculate progress for each enrolled course
-student.enrolledCourses.forEach((course) => {
-  const totalLessons = course.lessons.length;
-  const completedLessons = course.lessons.filter(
-    (lesson) => lesson.completions && lesson.completions.length > 0
-  ).length;
+    // Calculate progress for each enrolled course
+    student.enrolledCourses.forEach((course) => {
+      const totalLessons = course.lessons.length;
+      const completedLessons = course.lessons.filter(
+        (lesson) => lesson.completions && lesson.completions.length > 0
+      ).length;
 
-  course.progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
-});
+      course.progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+    });
 
     // Fetch available courses (not enrolled by the student)
     const availableCourses = await db.Course.findAll({
@@ -208,7 +208,7 @@ app.get("/courses/:id", async (req, res) => {
       return res.status(403).send("You are not enrolled in this course.");
     }
 
-    // Fetch the course details, including lessons and their completions
+    // Fetch the course details, including lessons and their completion status
     const course = await db.Course.findOne({
       where: { id: courseId },
       include: [
@@ -232,9 +232,6 @@ app.get("/courses/:id", async (req, res) => {
       return res.status(404).send("Course not found");
     }
 
-    // Get the first lesson ID
-    const firstLessonId = course.lessons.length > 0 ? course.lessons[0].id : null;
-
     // Check if all lessons in the course are completed
     const isCourseCompleted = course.lessons.every(
       (lesson) => lesson.completions && lesson.completions.length > 0
@@ -242,8 +239,7 @@ app.get("/courses/:id", async (req, res) => {
 
     res.render("courseDetails", {
       course,
-      firstLessonId, // Pass the first lesson ID to the view
-      isCourseCompleted, // Pass the variable to the view
+      isCourseCompleted,
       csrfToken: req.csrfToken(),
     });
   } catch (error) {
@@ -358,6 +354,52 @@ app.post("/courses/:id/enroll", async (req, res) => {
     res.redirect("/student/dashboard");
   } catch (error) {
     console.error("Error occurred while enrolling in the course:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.get("/courses/:id/preview", async (req, res) => {
+  const courseId = req.params.id;
+
+  try {
+    // Fetch the course details, including lessons
+    const course = await db.Course.findOne({
+      where: { id: courseId },
+      include: [
+        {
+          model: db.Lesson,
+          as: "lessons",
+          attributes: ["id", "title"], // Fetch only necessary fields
+        },
+        {
+          model: db.User,
+          as: "educator",
+          attributes: ["name"], // Fetch educator's name
+        },
+      ],
+    });
+
+    if (!course) {
+      return res.status(404).send("Course not found");
+    }
+
+    // Check if the student is enrolled in the course
+    const isEnrolled = req.session.user
+      ? await db.Enrollment.findOne({
+          where: {
+            userId: req.session.user.id,
+            courseId: courseId,
+          },
+        })
+      : false;
+
+    res.render("coursePreview", {
+      course,
+      isEnrolled: !!isEnrolled, // Pass enrollment status to the view
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.error("Error occurred while fetching course preview:", error);
     res.status(500).send("Internal server error");
   }
 });
