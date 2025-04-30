@@ -163,6 +163,7 @@ app.get("/student/dashboard", async (req, res) => {
       ).length;
       course.enrolledStudentsCount = course.enrollments ? course.enrollments.length : 0;
       course.progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+      course.isCompleted = totalLessons > 0 && completedLessons === totalLessons; // Mark as completed if all lessons are done
     });
 
     // Fetch available courses (not enrolled by the student)
@@ -572,6 +573,54 @@ app.post("/lessons/:lessonId/complete", async (req, res) => {
     res.redirect(`/courses/${course.id}`);
   } catch (error) {
     console.error("Error occurred while marking lesson as completed:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.get("/certificates/generate/:courseId", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'student') {
+    return res.redirect("/student/login");
+  }
+
+  const { courseId } = req.params;
+
+  try {
+    // Fetch the course and check if it's completed
+    const course = await db.Course.findOne({
+      where: { id: courseId },
+      include: [
+        {
+          model: db.Lesson,
+          as: "lessons",
+          include: [
+            {
+              model: db.LessonCompletion,
+              as: "completions",
+              where: { userId: req.session.user.id },
+              required: false,
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!course) {
+      return res.status(404).send("Course not found");
+    }
+
+    const totalLessons = course.lessons.length;
+    const completedLessons = course.lessons.filter(
+      (lesson) => lesson.completions && lesson.completions.length > 0
+    ).length;
+
+    if (totalLessons === 0 || completedLessons !== totalLessons) {
+      return res.status(403).send("You must complete the course to generate a certificate");
+    }
+
+    // Generate the certificate (this could involve creating a PDF or storing a record in the database)
+    res.send(`Certificate generated for course: ${course.title}`);
+  } catch (error) {
+    console.error("Error occurred while generating certificate:", error);
     res.status(500).send("Internal server error");
   }
 });
