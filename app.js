@@ -134,6 +134,11 @@ app.get("/student/dashboard", async (req, res) => {
               attributes: ["name"], // Fetch only the educator's name
             },
             {
+              model: db.Enrollment,
+              as: "enrollments",
+              attributes: ["id"],
+             },
+            {
               model: db.Lesson,
               as: "lessons",
               include: [
@@ -156,7 +161,7 @@ app.get("/student/dashboard", async (req, res) => {
       const completedLessons = course.lessons.filter(
         (lesson) => lesson.completions && lesson.completions.length > 0
       ).length;
-
+      course.enrolledStudentsCount = course.enrollments ? course.enrollments.length : 0;
       course.progress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
     });
 
@@ -171,7 +176,22 @@ app.get("/student/dashboard", async (req, res) => {
           as: "educator", // Include the educator who created the course
           attributes: ["name"], // Fetch only the educator's name
         },
+        {
+          model: db.Enrollment,
+          as: "enrollments",
+          attributes: ["id"], // Fetch enrollments to count students
+        },
       ],
+    });
+
+    // Add enrolled students count to each available course
+    availableCourses.forEach((course) => {
+      course.enrolledStudentsCount = course.enrollments.length;
+    });
+
+    // Add enrolled students count to each enrolled course
+    student.enrolledCourses.forEach((course) => {
+      course.enrolledStudentsCount = course.enrollments ? course.enrollments.length : 0;
     });
 
     res.render("studentDashboard", {

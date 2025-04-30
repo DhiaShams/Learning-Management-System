@@ -1,50 +1,29 @@
 'use strict';
-const {Model} = require('sequelize');
+const { Model } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class Enrollment extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      // Define association with User
       Enrollment.belongsTo(models.User, {
-        foreignKey: 'userId', // Explicitly define foreign key
-        targetKey: 'id'
+        foreignKey: 'userId',
+        as: 'student',
       });
-
-      // Define association with Course
       Enrollment.belongsTo(models.Course, {
-        foreignKey: 'courseId', // Explicitly define foreign key
-        targetKey: 'id'
+        foreignKey: 'courseId',
+        as: 'course',
       });
     }
   }
-  
   Enrollment.init({
-    userId: {
+    id: {
       type: DataTypes.INTEGER,
-      allowNull: false,
-      unique: 'enrollment_unique_constraint', // Composite unique constraint
-      field: 'userId' // Explicitly map to userId column
+      primaryKey: true,
+      autoIncrement: true,
     },
-    courseId: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      unique: 'enrollment_unique_constraint', // Composite unique constraint
-      field: 'courseId' // Explicitly map to courseId column
-    },
-    enrolledAt: {
-      type: DataTypes.DATE,
-      defaultValue: DataTypes.NOW,
-      allowNull: false
-    }
+    userId: DataTypes.INTEGER,
+    courseId: DataTypes.INTEGER,
   }, {
     sequelize,
     modelName: 'Enrollment',
-    tableName: 'Enrollments', // Explicitly define table name
   });
-
   return Enrollment;
 };

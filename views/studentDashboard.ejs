@@ -6,6 +6,19 @@
   <title>Student Dashboard</title>
   <meta name="csrf-token" content="<%= csrfToken %>" />
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // Select all progress bar elements
+      const progressBars = document.querySelectorAll('[data-progress]');
+  
+      progressBars.forEach(bar => {
+        // Get the progress value from the data-progress attribute
+        const progress = bar.getAttribute('data-progress');
+        // Set the width of the progress bar dynamically
+        bar.style.width = `${progress}%`;
+      });
+    });
+  </script>
 </head>
 <body class="bg-gray-100 font-sans">
 
@@ -32,10 +45,20 @@
             <div class="bg-white shadow-lg rounded-2xl p-6">
               <h4 class="text-lg font-semibold mb-2"><%= course.title %></h4>
               <p class="text-gray-600 mb-2"><%= course.description %></p>
+              <div class="flex justify-between text-gray-600 mb-4">
               <p class="text-sm text-gray-500 mb-4">Created by: <%= course.educator.name %></p>
+              <div class="flex items-center text-gray-600 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="#000000" fill="none">
+                  <path d="M19 5L12 2L5 5L8.5 6.5V8.5C8.5 8.5 9.66667 8 12 8C14.3333 8 15.5 8.5 15.5 8.5V6.5L19 5ZM19 5V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M15.5 8.5V9.5C15.5 11.433 13.933 13 12 13C10.067 13 8.5 11.433 8.5 9.5V8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M7.78256 16.7033C6.68218 17.3878 3.79706 18.7854 5.55429 20.5342C6.41269 21.3885 7.36872 21.9995 8.57068 21.9995H15.4293C16.6313 21.9995 17.5873 21.3885 18.4457 20.5342C20.2029 18.7854 17.3178 17.3878 16.2174 16.7033C13.6371 15.0982 10.3629 15.0982 7.78256 16.7033Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+                <span><%= course.enrolledStudentsCount %></span>
+              </div>
+              </div>
               <div class="w-full bg-gray-200 rounded-full h-3 mb-4">
-                <!-- Adjust the width of the progress bar dynamically -->
-                <div class="bg-blue-500 h-3 rounded-full transition-all duration-300" style="width: <%= course.progress %>%"></div>
+                <!-- Add a data-progress attribute -->
+                <div class="bg-blue-500 h-3 rounded-full transition-all duration-300" data-progress="<%= course.progress %>"></div>
               </div>
               <div class="flex justify-between">
                 <!-- Display the progress percentage -->
@@ -60,7 +83,17 @@
             <div class="bg-white shadow-lg rounded-2xl p-6">
               <h4 class="text-lg font-semibold mb-2"><%= course.title %></h4>
               <p class="text-gray-600 mb-4"><%= course.description %></p>
+              <div class="flex justify-between text-gray-600 mb-4">
               <p class="text-sm text-gray-500 mb-4">Created by: <%= course.educator.name %></p>
+              <div class="flex items-center text-gray-600 mb-4">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" color="#000000" fill="none">
+                  <path d="M19 5L12 2L5 5L8.5 6.5V8.5C8.5 8.5 9.66667 8 12 8C14.3333 8 15.5 8.5 15.5 8.5V6.5L19 5ZM19 5V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M15.5 8.5V9.5C15.5 11.433 13.933 13 12 13C10.067 13 8.5 11.433 8.5 9.5V8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                  <path d="M7.78256 16.7033C6.68218 17.3878 3.79706 18.7854 5.55429 20.5342C6.41269 21.3885 7.36872 21.9995 8.57068 21.9995H15.4293C16.6313 21.9995 17.5873 21.3885 18.4457 20.5342C20.2029 18.7854 17.3178 17.3878 16.2174 16.7033C13.6371 15.0982 10.3629 15.0982 7.78256 16.7033Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+                <span><%= course.enrolledStudentsCount %></span>
+              </div>
+              </div>
               <a href="/courses/<%= course.id %>/preview" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 transition">Preview</a>
             </div>
           <% }); %>
