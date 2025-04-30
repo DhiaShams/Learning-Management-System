@@ -72,11 +72,14 @@
               <% } %>
                 <span class="text-sm text-gray-700"><%= course.progress %>% completed</span>
               </div>
+              <div class="flex justify-between">
                 <% if (course.isCompleted) { %>
                   <a href="/certificates/generate/<%= course.id %>" class="text-sm text-green-600 hover:underline">Generate Certificate</a>
-                <% } else { %>
-                  <a href="/courses/<%= course.id %>" class="text-sm text-blue-600 hover:underline">Continue Learning</a>
+                  <br>
+                  <a href="/certificates/view/<%= course.id %>" class="text-sm text-blue-600 hover:underline">View Certificate</a>
                 <% } %>
+                  <a href="/courses/<%= course.id %>" class="text-sm text-blue-600 hover:underline">Continue Learning</a>
+              </div>
               </div>
             </div>
           <% }); %>

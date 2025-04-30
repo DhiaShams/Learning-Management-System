@@ -11,14 +11,15 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-    Certificate.belongsTo(models.User, { foreignKey: 'userId' });
-    Certificate.belongsTo(models.Course, { foreignKey: 'courseId' });
+    Certificate.belongsTo(models.User, { foreignKey: 'userId', as: 'student' });
+    Certificate.belongsTo(models.Course, { foreignKey: 'courseId', as: 'course' });
     }
   }
   Certificate.init({
     userId: DataTypes.INTEGER,
     courseId: DataTypes.INTEGER,
-    score: DataTypes.INTEGER
+    score: DataTypes.INTEGER,
+    filePath: DataTypes.STRING, // Add this field to store the file path
   }, {
     sequelize,
     modelName: 'Certificate',
