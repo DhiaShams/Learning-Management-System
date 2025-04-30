@@ -151,7 +151,17 @@ app.get("/student/dashboard", async (req, res) => {
               ],
             },
           ],
-        },{ model: db.Certificate, as: 'certificates' },
+        }, {
+          model: db.Certificate,
+          as: "certificates",
+          include: [
+            {
+              model: db.Course,
+              as: "course",
+              attributes: ["title"], // Fetch the course title for the certificate
+            },
+          ],
+        },
       ],
     });
 
@@ -735,6 +745,34 @@ app.get("/certificates/view/:courseId", async (req, res) => {
 
     // Serve the certificate file
     res.sendFile(certificate.filePath, { root: "." });
+  } catch (error) {
+    console.error("Error occurred while fetching certificate:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.get("/certificates/view/:certificateId", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'student') {
+    return res.redirect("/student/login");
+  }
+
+  const { certificateId } = req.params;
+
+  try {
+    // Fetch the certificate record
+    const certificate = await db.Certificate.findOne({
+      where: {
+        id: certificateId,
+        userId: req.session.user.id,
+      },
+    });
+
+    if (!certificate) {
+      return res.status(404).send("Certificate not found");
+    }
+
+    // Serve the certificate file
+    res.sendFile(path.resolve(certificate.filePath));
   } catch (error) {
     console.error("Error occurred while fetching certificate:", error);
     res.status(500).send("Internal server error");

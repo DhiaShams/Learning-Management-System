@@ -119,15 +119,15 @@
 
     <!-- Section: Certificates -->
     <section>
-      <h3 class="text-xl font-bold mb-4">Certificates</h3>
+      <h3 class="text-xl font-bold mb-4">Your Certificates</h3>
       <% if (certificates && certificates.length === 0) { %>
         <p class="text-gray-600">You haven’t earned any certificates yet.</p>
       <% } else { %>
         <ul class="list-disc list-inside text-gray-700 space-y-2">
           <% certificates.forEach(cert => { %>
             <li>
-              <a href="/certificates/<%= cert.id %>" class="text-blue-600 hover:underline">
-                Certificate for <%= cert.courseTitle %>
+              <a href="/certificates/view/<%= cert.id %>" class="text-blue-600 hover:underline">
+                Certificate for <%= cert.course.title %>
               </a>
             </li>
           <% }); %>
