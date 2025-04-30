@@ -779,6 +779,61 @@ app.get("/certificates/view/:certificateId", async (req, res) => {
   }
 });
 
+//doubts
+app.post("/pages/:pageId/doubt", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'student') {
+    return res.redirect("/student/login");
+  }
+
+  const { pageId } = req.params;
+  const { doubt } = req.body;
+
+  try {
+    // Save the doubt in the database
+    await db.Doubt.create({
+      userId: req.session.user.id,
+      pageId: pageId,
+      content: doubt,
+    });
+
+    res.redirect(`/pages/${pageId}`);
+  } catch (error) {
+    console.error("Error occurred while submitting doubt:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.get("/pages/:pageId", async (req, res) => {
+  try {
+    const page = await db.Page.findByPk(req.params.pageId, {
+      include: [
+        {
+          model: db.Lesson,
+          as: "lesson",
+          include: [{ model: db.Course, as: "course" }],
+        },
+        {
+          model: db.Doubt,
+          as: "doubts",
+          include: [{ model: db.User, as: "student", attributes: ["name"] }],
+        },
+      ],
+    });
+
+    if (!page) {
+      return res.status(404).send("Page not found");
+    }
+
+    res.render("pageDetails", {
+      page,
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.error("Error occurred while fetching page details:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
 // Educator Dashboard
 app.get("/educator/dashboard", async (req, res) => {
   if (!req.session.user || req.session.user.role !== 'educator') {

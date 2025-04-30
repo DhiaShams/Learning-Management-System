@@ -18,6 +18,43 @@
       <h2 class="text-2xl font-semibold mb-4"><%= page.title %></h2>
       <p class="text-gray-600"><%= page.content %></p>
     </section>
+    
+    <!-- Form to Submit Doubt -->
+    <section class="mb-12">
+      <h3 class="text-xl font-bold mb-4">Ask a Doubt</h3>
+      <form method="POST" action="/pages/<%= page.id %>/doubt">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <textarea
+          name="doubt"
+          rows="4"
+          class="w-full p-2 border border-gray-300 rounded mb-4"
+          placeholder="Type your doubt here..."
+          required
+        ></textarea>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 transition">
+          Submit Doubt
+        </button>
+      </form>
+    </section>
+
+    <!-- Section: Doubts -->
+<section class="mb-12">
+  <h3 class="text-xl font-bold mb-4">Doubts</h3>
+  <% if (page.doubts && page.doubts.length === 0) { %>
+    <p class="text-gray-600">No doubts have been asked yet.</p>
+  <% } else if (page.doubts) { %>
+    <ul class="space-y-4">
+      <% page.doubts.forEach(doubt => { %>
+        <li class="p-4 border border-gray-300 rounded">
+          <p class="text-gray-800"><%= doubt.content %></p>
+          <p class="text-sm text-gray-500 mt-2">Asked by: <%= doubt.student.name %></p>
+        </li>
+      <% }); %>
+    </ul>
+  <% } else { %>
+    <p class="text-gray-600">Unable to load doubts. Please try again later.</p>
+  <% } %>
+</section>
 
     <form method="POST" action="/pages/<%= page.id %>/complete">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
