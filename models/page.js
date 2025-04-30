@@ -13,6 +13,7 @@ module.exports = (sequelize, DataTypes) => {
       // define association here
       Page.belongsTo(models.Lesson, { foreignKey: 'lessonId',as: 'lesson', onDelete: 'CASCADE' });
       Page.hasMany(models.PageCompletion, { as: "completions", foreignKey: "pageId" });
+      Page.hasMany(models.Doubt, { foreignKey: 'pageId', as: 'doubts' });
     }
   }
   Page.init({

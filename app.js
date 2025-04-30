@@ -789,11 +789,27 @@ app.post("/pages/:pageId/doubt", async (req, res) => {
   const { doubt } = req.body;
 
   try {
+    // Fetch the page and its associated lesson and course
+    const page = await db.Page.findByPk(pageId, {
+      include: [
+        {
+          model: db.Lesson,
+          as: "lesson",
+          include: [{ model: db.Course, as: "course" }],
+        },
+      ],
+    });
+
+    if (!page) {
+      return res.status(404).send("Page not found");
+    }
+
     // Save the doubt in the database
     await db.Doubt.create({
       userId: req.session.user.id,
       pageId: pageId,
-      content: doubt,
+      courseId: page.lesson.course.id, // Get the courseId from the associated course
+      questionText: doubt, // Save the doubt text
     });
 
     res.redirect(`/pages/${pageId}`);
