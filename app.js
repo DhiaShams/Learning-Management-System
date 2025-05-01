@@ -902,6 +902,40 @@ app.get("/educator/dashboard", async (req, res) => {
   }
 });
 
+app.get("/educator/courses", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  try {
+    // Fetch courses created by the educator
+    const courses = await db.Course.findAll({
+      where: { educatorId: req.session.user.id },
+      include: [
+        {
+          model: db.Enrollment,
+          as: "enrollments",
+          attributes: ["id"], // Fetch enrollments to count students
+        },
+      ],
+    });
+
+    // Add enrolled students count to each course
+    courses.forEach(course => {
+      course.enrolledStudentsCount = course.enrollments.length;
+    });
+
+    res.render("educatorCourses", {
+      educatorName: req.session.user.name,
+      courses,
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.error("Error occurred while fetching educator courses:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
 app.get("/educator/course/new", (req, res) => {
   if (!req.session.user || req.session.user.role !== 'educator') {
     return res.redirect("/educator/login");

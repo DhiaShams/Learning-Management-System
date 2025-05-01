@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Courses</title>
+  <meta name="csrf-token" content="<%= csrfToken %>" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-50 font-sans">
+  <nav class="bg-purple-700 text-white px-6 py-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold">My Courses</h1>
+    <a href="/educator/dashboard" class="bg-white text-purple-700 px-4 py-2 rounded hover:bg-gray-200 transition">Back to Dashboard</a>
+  </nav>
+
+  <main class="max-w-6xl mx-auto mt-8 p-4">
+    <h2 class="text-2xl font-semibold mb-6">Welcome, <%= educatorName %> 👋</h2>
+
+    <!-- Section: My Courses -->
+    <section class="mb-12">
+      <h3 class="text-xl font-bold mb-4">Courses You Created</h3>
+      <% if (courses && courses.length === 0) { %>
+        <p class="text-gray-600">You haven’t created any courses yet.</p>
+      <% } else { %>
+        <div class="grid md:grid-cols-2 gap-6">
+          <% courses.forEach(course => { %>
+            <div class="bg-white shadow-md rounded-2xl p-6">
+              <h4 class="text-lg font-semibold mb-1"><%= course.title %></h4>
+              <p class="text-gray-600 mb-3"><%= course.description %></p>
+              <p class="text-sm text-gray-500">Enrolled Students: <%= course.enrolledStudentsCount %></p>
+              <div class="flex justify-between mt-4">
+                <a href="/educator/courses/<%= course.id %>/edit" class="text-blue-600 hover:underline">Edit</a>
+                <a href="/educator/courses/<%= course.id %>/lessons" class="text-green-600 hover:underline">Manage Lessons</a>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>
