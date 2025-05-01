@@ -1177,6 +1177,119 @@ app.post("/educator/pages/:id/edit", async (req, res) => {
   }
 });
 
+app.get("/educator/reports", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  try {
+    // Fetch all courses created by the educator
+    const courses = await db.Course.findAll({
+      where: { educatorId: req.session.user.id },
+      include: [
+        {
+          model: db.Enrollment,
+          as: "enrollments",
+          attributes: ["id"], // Fetch enrollments to count students
+        },
+      ],
+    });
+
+    // Add enrolled students count to each course
+    courses.forEach(course => {
+      course.enrolledStudentsCount = course.enrollments.length;
+    });
+
+    res.render("educatorReportsOverview", {
+      educatorName: req.session.user.name,
+      courses,
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.error("Error occurred while fetching educator reports:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.get("/educator/reports/:courseId", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  const { courseId } = req.params;
+
+  try {
+    // Fetch the course details
+    const course = await db.Course.findByPk(courseId, {
+      where: { educatorId: req.session.user.id },
+      include: [
+        {
+          model: db.Enrollment,
+          as: "enrollments",
+          include: [
+            {
+              model: db.User,
+              as: "student",
+              attributes: ["id", "name", "email"], // Fetch student details
+            },
+          ],
+        },
+        {
+          model: db.Doubt,
+          as: "doubts",
+          include: [
+            {
+              model: db.User,
+              as: "student",
+              attributes: ["name"], // Fetch student name for doubts
+            },
+          ],
+        },
+        {
+          model: db.Lesson,
+          as: "lessons",
+          include: [
+            {
+              model: db.LessonCompletion,
+              as: "completions",
+              attributes: ["userId"], // Fetch lesson completions
+            },
+          ],
+        },
+      ],
+    });
+
+    if (!course) {
+      return res.status(404).send("Course not found");
+    }
+
+    // Calculate progress for each enrolled student
+    const students = course.enrollments.map(enrollment => {
+      const studentId = enrollment.student.id;
+      const totalLessons = course.lessons.length;
+      const completedLessons = course.lessons.filter(lesson =>
+        lesson.completions.some(completion => completion.userId === studentId)
+      ).length;
+
+      return {
+        name: enrollment.student.name,
+        email: enrollment.student.email,
+        progress: totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0,
+      };
+    });
+
+    res.render("educatorReports", {
+      course,
+      students,
+      doubts: course.doubts,
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.error("Error occurred while fetching course reports:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
 app.get("/doubts/:doubtId", async (req, res) => {
   if (!req.session.user || req.session.user.role !== 'educator') {
     return res.redirect("/educator/login");
@@ -1206,13 +1319,14 @@ app.get("/doubts/:doubtId", async (req, res) => {
   }
 });
 
+// When responding to a doubt
 app.post("/doubts/:doubtId/respond", async (req, res) => {
   if (!req.session.user || req.session.user.role !== 'educator') {
     return res.redirect("/educator/login");
   }
 
   const { doubtId } = req.params;
-  const { response } = req.body;
+  const { answer } = req.body;
 
   try {
     const doubt = await db.Doubt.findByPk(doubtId);
@@ -1221,8 +1335,9 @@ app.post("/doubts/:doubtId/respond", async (req, res) => {
       return res.status(404).send("Doubt not found");
     }
 
-    // Update the doubt with the educator's response
-    doubt.responseText = response;
+    // Update the doubt with the educator's answer
+    doubt.answerText = answer; // Updated field name
+    doubt.isResolved = true;
     await doubt.save();
 
     res.redirect(`/doubts/${doubtId}`);

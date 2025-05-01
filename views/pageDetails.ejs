@@ -37,7 +37,7 @@
       </form>
     </section>
 
-    <!-- Section: Doubts -->
+<!-- Section: Doubts -->
 <section class="mb-12">
   <h3 class="text-xl font-bold mb-4">Doubts</h3>
   <% if (page.doubts && page.doubts.length === 0) { %>
@@ -46,7 +46,12 @@
     <ul class="space-y-4">
       <% page.doubts.forEach(doubt => { %>
         <li class="p-4 border border-gray-300 rounded">
-          <p class="text-gray-800"><%= doubt.content %></p>
+          <p class="text-gray-800"><strong>Question:</strong> <%= doubt.questionText %></p>
+          <% if (doubt.responseText) { %>
+            <p class="text-gray-800 mt-2"><strong>Response:</strong> <%= doubt.responseText %></p>
+          <% } else { %>
+            <p class="text-gray-500 mt-2">No response yet.</p>
+          <% } %>
           <p class="text-sm text-gray-500 mt-2">Asked by: <%= doubt.student.name %></p>
         </li>
       <% }); %>

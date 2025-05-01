@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course Reports - <%= course.title %></title>
+  <meta name="csrf-token" content="<%= csrfToken %>" />
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-gray-50 font-sans">
+  <nav class="bg-purple-700 text-white px-6 py-4 flex justify-between items-center">
+    <h1 class="text-xl font-bold">Course Reports - <%= course.title %></h1>
+    <a href="/educator/dashboard" class="bg-white text-purple-700 px-4 py-2 rounded hover:bg-gray-200 transition">Back to Dashboard</a>
+  </nav>
+
+  <main class="max-w-6xl mx-auto mt-8 p-4">
+    <h2 class="text-2xl font-semibold mb-6">Reports for "<%= course.title %>"</h2>
+
+    <!-- Section: Enrolled Students -->
+    <section class="mb-12">
+      <h3 class="text-xl font-bold mb-4">Enrolled Students</h3>
+      <% if (students && students.length === 0) { %>
+        <p class="text-gray-600">No students are enrolled in this course yet.</p>
+      <% } else { %>
+        <table class="w-full border-collapse border border-gray-300">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border border-gray-300 px-4 py-2 text-left">Name</th>
+              <th class="border border-gray-300 px-4 py-2 text-left">Email</th>
+              <th class="border border-gray-300 px-4 py-2 text-left">Progress</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% students.forEach(student => { %>
+              <tr>
+                <td class="border border-gray-300 px-4 py-2"><%= student.name %></td>
+                <td class="border border-gray-300 px-4 py-2"><%= student.email %></td>
+                <td class="border border-gray-300 px-4 py-2"><%= student.progress %>%</td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      <% } %>
+    </section>
+
+    <!-- Section: Doubts -->
+    <section class="mb-12">
+      <h3 class="text-xl font-bold mb-4">Doubts</h3>
+      <% if (doubts && doubts.length === 0) { %>
+        <p class="text-gray-600">No doubts have been asked yet.</p>
+      <% } else { %>
+        <ul class="space-y-4">
+            <% doubts.forEach(doubt => { %>
+              <li class="p-4 border border-gray-300 rounded">
+                <p class="text-gray-800"><strong>Question:</strong> <%= doubt.questionText %></p>
+                <% if (doubt.answerText) { %> <!-- Updated field name -->
+                  <p class="text-gray-800 mt-2"><strong>Answer:</strong> <%= doubt.answerText %></p>
+                <% } else { %>
+                  <p class="text-gray-500 mt-2">No answer yet.</p>
+                <% } %>
+                <p class="text-sm text-gray-500 mt-2">Asked by: <%= doubt.studentName %></p>
+              </li>
+            <% }); %>
+          </ul>
+      <% } %>
+    </section>
+  </main>
+</body>
+</html>
