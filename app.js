@@ -857,37 +857,48 @@ app.get("/educator/dashboard", async (req, res) => {
   }
 
   try {
-    const educator = await db.User.findByPk(req.session.user.id, {
+    // Fetch educator's courses
+    const courses = await db.Course.findAll({
+      where: { educatorId: req.session.user.id },
       include: [
         {
-          model: db.Course,
-          as: 'createdCourses',
-          include: [
-            {
-              model: db.Review,
-              as: 'reviews', // Include reviews for each course
-            },
-          ],
+          model: db.Enrollment,
+          as: "enrollments",
+          attributes: ["id"], // Fetch enrollments to count students
         },
       ],
     });
 
-    if (!educator) {
-      return res.status(404).send('Educator not found');
-    }
+    // Add enrolled students count to each course
+    courses.forEach(course => {
+      course.enrolledStudentsCount = course.enrollments.length;
+    });
 
-    // Flatten reviews from all courses
-    const reviews = educator.createdCourses.flatMap(course => course.reviews);
+    // Fetch all available courses
+    const availableCourses = await db.Course.findAll({
+      include: [
+        {
+          model: db.Enrollment,
+          as: "enrollments",
+          attributes: ["id"], // Fetch enrollments to count students
+        },
+      ],
+    });
+
+    // Add enrolled students count to each available course
+    availableCourses.forEach(course => {
+      course.enrolledStudentsCount = course.enrollments.length;
+    });
 
     res.render("educatorDashboard", {
-      educatorName: educator.name,
-      courses: educator.createdCourses,
-      reviews: reviews, // Pass reviews to the view
+      educatorName: req.session.user.name,
+      courses,
+      availableCourses,
       csrfToken: req.csrfToken(),
     });
   } catch (error) {
-    console.error('Error occurred while rendering educator dashboard:', error);
-    res.status(500).send('Internal server error');
+    console.error("Error occurred while rendering educator dashboard:", error);
+    res.status(500).send("Internal server error");
   }
 });
 
@@ -1128,6 +1139,61 @@ app.post("/educator/pages/:id/edit", async (req, res) => {
     res.redirect(`/educator/courses/${lesson.courseId}/lessons`);
   } catch (error) {
     console.error("Error occurred while updating the page:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.get("/doubts/:doubtId", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  const { doubtId } = req.params;
+
+  try {
+    const doubt = await db.Doubt.findByPk(doubtId, {
+      include: [
+        { model: db.User, as: "student", attributes: ["name"] },
+        { model: db.Page, as: "page", attributes: ["title"] },
+      ],
+    });
+
+    if (!doubt) {
+      return res.status(404).send("Doubt not found");
+    }
+
+    res.render("doubtDetails", {
+      doubt,
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.error("Error occurred while fetching doubt details:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
+app.post("/doubts/:doubtId/respond", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'educator') {
+    return res.redirect("/educator/login");
+  }
+
+  const { doubtId } = req.params;
+  const { response } = req.body;
+
+  try {
+    const doubt = await db.Doubt.findByPk(doubtId);
+
+    if (!doubt) {
+      return res.status(404).send("Doubt not found");
+    }
+
+    // Update the doubt with the educator's response
+    doubt.responseText = response;
+    await doubt.save();
+
+    res.redirect(`/doubts/${doubtId}`);
+  } catch (error) {
+    console.error("Error occurred while responding to doubt:", error);
     res.status(500).send("Internal server error");
   }
 });
