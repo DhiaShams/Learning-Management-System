@@ -831,7 +831,9 @@ app.get("/pages/:pageId", async (req, res) => {
         {
           model: db.Doubt,
           as: "doubts",
-          include: [{ model: db.User, as: "student", attributes: ["name"] }],
+          include: [
+            { model: db.User, as: "student", attributes: ["name"] },
+          ],
         },
       ],
     });
@@ -1300,8 +1302,8 @@ app.get("/doubts/:doubtId", async (req, res) => {
   try {
     const doubt = await db.Doubt.findByPk(doubtId, {
       include: [
-        { model: db.User, as: "student", attributes: ["name"] },
-        { model: db.Page, as: "page", attributes: ["title"] },
+        { model: db.User, as: "student", attributes: ["name"] }, // Include student details
+        { model: db.Page, as: "page", attributes: ["title"] },   // Include page details
       ],
     });
 
@@ -1326,7 +1328,7 @@ app.post("/doubts/:doubtId/respond", async (req, res) => {
   }
 
   const { doubtId } = req.params;
-  const { answer } = req.body;
+  const { response } = req.body;
 
   try {
     const doubt = await db.Doubt.findByPk(doubtId);
@@ -1335,11 +1337,12 @@ app.post("/doubts/:doubtId/respond", async (req, res) => {
       return res.status(404).send("Doubt not found");
     }
 
-    // Update the doubt with the educator's answer
-    doubt.answerText = answer; // Updated field name
+    // Update the doubt with the educator's response
+    doubt.answerText = response;
     doubt.isResolved = true;
     await doubt.save();
 
+    // Redirect back to the doubt details page
     res.redirect(`/doubts/${doubtId}`);
   } catch (error) {
     console.error("Error occurred while responding to doubt:", error);

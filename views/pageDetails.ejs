@@ -47,8 +47,8 @@
       <% page.doubts.forEach(doubt => { %>
         <li class="p-4 border border-gray-300 rounded">
           <p class="text-gray-800"><strong>Question:</strong> <%= doubt.questionText %></p>
-          <% if (doubt.responseText) { %>
-            <p class="text-gray-800 mt-2"><strong>Response:</strong> <%= doubt.responseText %></p>
+          <% if (doubt.answerText) { %>
+            <p class="text-gray-800 mt-2"><strong>Response:</strong> <%= doubt.answerText %></p>
           <% } else { %>
             <p class="text-gray-500 mt-2">No response yet.</p>
           <% } %>

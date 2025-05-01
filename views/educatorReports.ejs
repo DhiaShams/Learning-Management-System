@@ -58,7 +58,8 @@
                 <% } else { %>
                   <p class="text-gray-500 mt-2">No answer yet.</p>
                 <% } %>
-                <p class="text-sm text-gray-500 mt-2">Asked by: <%= doubt.studentName %></p>
+                <p class="text-sm text-gray-500 mt-2">Asked by: <%= doubt.student.name %></p>
+                <a href="/doubts/<%= doubt.id %>" class="text-blue-600 hover:underline mt-2 block">View Details</a>
               </li>
             <% }); %>
           </ul>
