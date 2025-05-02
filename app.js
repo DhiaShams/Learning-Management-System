@@ -16,6 +16,7 @@ app.use(session({
   secret: 'your-secret-key',
   resave: false,
   saveUninitialized: true,
+  cookie: { secure: false }, 
 }));
 app.use(csrf('your_super_secret_key_here_12345', ['POST', 'PUT', 'DELETE', 'PATCH']));
 
@@ -28,7 +29,64 @@ app.get('/csrf-token', (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
 });
 
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+
+// Initialize Passport.js
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Configure Passport.js Local Strategy
+passport.use(
+  new LocalStrategy(
+    { usernameField: 'email', passwordField: 'password' }, // Use email and password for authentication
+    async (email, password, done) => {
+      try {
+        // Find the user by email
+        const user = await db.User.findOne({ where: { email } });
+
+        if (!user) {
+          return done(null, false, { message: 'Invalid email or password' });
+        }
+
+        // Validate the password
+        const isValidPassword = await bcrypt.compare(password, user.password);
+        if (!isValidPassword) {
+          return done(null, false, { message: 'Invalid email or password' });
+        }
+
+        // Authentication successful
+        return done(null, user);
+      } catch (error) {
+        return done(error);
+      }
+    }
+  )
+);
+
+// Serialize user to store in session
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+// Deserialize user from session
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await db.User.findByPk(id);
+    done(null, user);
+  } catch (error) {
+    done(error);
+  }
+});
+
 const { sequelize } = require('./models');
+
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect('/login');
+}
 
 app.get('/', (req, res) => {
   res.render('index', {
@@ -50,37 +108,43 @@ app.get('/:role', (req, res) => {
 });
 
 // Handle login
-app.post('/api/:role/login', async (req, res) => {
+app.post('/api/:role/login', (req, res, next) => {
   const { role } = req.params;
-  const { email, password } = req.body;
 
-  try {
-    const user = await db.User.findOne({ where: { email, role } });
-
-    if (!user || !(await bcrypt.compare(password, user.password))) {
-      // Validate password using bcrypt
-      return res.redirect(`/${role}/login?error=Invalid credentials`);
+  passport.authenticate('local', (err, user, info) => {
+    if (err) {
+      console.error('Error during login:', err);
+      return res.status(500).send('Internal server error');
     }
 
-    // Set session
-    req.session.user = {
-      id: user.id,
-      name: user.name,
-      role: role,
-    };
-
-    // Redirect to the respective dashboard
-    if (role === 'student') {
-      return res.redirect('/student/dashboard');
-    } else if (role === 'educator') {
-      return res.redirect('/educator/dashboard');
-    } else {
-      return res.status(400).send('Invalid role');
+    if (!user) {
+      return res.redirect(`/${role}/login?error=${info.message}`);
     }
-  } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).send('Internal server error');
-  }
+
+    // Log the user in
+    req.logIn(user, (err) => {
+      if (err) {
+        console.error('Error during session creation:', err);
+        return res.status(500).send('Internal server error');
+      }
+
+      // Set the session user object
+      req.session.user = {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+      };
+
+      // Redirect to the respective dashboard
+      if (role === 'student') {
+        return res.redirect('/student/dashboard');
+      } else if (role === 'educator') {
+        return res.redirect('/educator/dashboard');
+      } else {
+        return res.status(400).send('Invalid role');
+      }
+    });
+  })(req, res, next);
 });
 
 // Handle signup
@@ -115,9 +179,9 @@ app.post('/api/:role/signup', async (req, res) => {
   }
 });
 
-app.get("/student/dashboard", async (req, res) => {
+app.get('/student/dashboard', ensureAuthenticated, async (req, res) => {
   if (!req.session.user || req.session.user.role !== 'student') {
-    return res.redirect("/student/login");
+    return res.redirect('/student/login');
   }
 
   try {
@@ -137,7 +201,7 @@ app.get("/student/dashboard", async (req, res) => {
               model: db.Enrollment,
               as: "enrollments",
               attributes: ["id"],
-             },
+            },
             {
               model: db.Lesson,
               as: "lessons",
@@ -151,7 +215,8 @@ app.get("/student/dashboard", async (req, res) => {
               ],
             },
           ],
-        }, {
+        },
+        {
           model: db.Certificate,
           as: "certificates",
           include: [
@@ -164,6 +229,10 @@ app.get("/student/dashboard", async (req, res) => {
         },
       ],
     });
+
+    if (!student) {
+      return res.status(404).send("Student not found");
+    }
 
     // Calculate progress for each enrolled course
     student.enrolledCourses.forEach((course) => {
@@ -198,11 +267,6 @@ app.get("/student/dashboard", async (req, res) => {
     // Add enrolled students count to each available course
     availableCourses.forEach((course) => {
       course.enrolledStudentsCount = course.enrollments.length;
-    });
-
-    // Add enrolled students count to each enrolled course
-    student.enrolledCourses.forEach((course) => {
-      course.enrolledStudentsCount = course.enrollments ? course.enrollments.length : 0;
     });
 
     res.render("studentDashboard", {
@@ -1344,10 +1408,10 @@ app.post("/doubts/:doubtId/respond", async (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-  req.session.destroy((err) => {
+  req.logout((err) => {
     if (err) {
-      console.error("Error during logout:", err);
-      return res.status(500).send("Internal server error");
+      console.error('Error during logout:', err);
+      return res.status(500).send('Internal server error');
     }
     res.redirect('/');
   });
