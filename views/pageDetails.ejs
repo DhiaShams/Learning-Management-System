@@ -37,29 +37,12 @@
       </form>
     </section>
 
-<!-- Section: Doubts -->
-<section class="mb-12">
-  <h3 class="text-xl font-bold mb-4">Doubts</h3>
-  <% if (page.doubts && page.doubts.length === 0) { %>
-    <p class="text-gray-600">No doubts have been asked yet.</p>
-  <% } else if (page.doubts) { %>
-    <ul class="space-y-4">
-      <% page.doubts.forEach(doubt => { %>
-        <li class="p-4 border border-gray-300 rounded">
-          <p class="text-gray-800"><strong>Question:</strong> <%= doubt.questionText %></p>
-          <% if (doubt.answerText) { %>
-            <p class="text-gray-800 mt-2"><strong>Response:</strong> <%= doubt.answerText %></p>
-          <% } else { %>
-            <p class="text-gray-500 mt-2">No response yet.</p>
-          <% } %>
-          <p class="text-sm text-gray-500 mt-2">Asked by: <%= doubt.student.name %></p>
-        </li>
-      <% }); %>
-    </ul>
-  <% } else { %>
-    <p class="text-gray-600">Unable to load doubts. Please try again later.</p>
-  <% } %>
-</section>
+    <section class="mb-12">
+      <h3 class="text-xl font-bold mb-4">Doubts</h3>
+      <div id="doubts-container">
+        <p class="text-gray-600">Loading doubts...</p>
+      </div>
+    </section>
 
     <form method="POST" action="/pages/<%= page.id %>/complete">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -68,5 +51,40 @@
       </button>
     </form>
   </main>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const pageId = "<%= page.id %>"; // Pass the page ID dynamically
+      const doubtsContainer = document.getElementById("doubts-container");
+  
+      try {
+        const response = await fetch(`/pages/${pageId}/doubts`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch doubts");
+        }
+  
+        const doubts = await response.json();
+  
+        if (doubts.length === 0) {
+          doubtsContainer.innerHTML = "<p class='text-gray-600'>No doubts have been asked yet.</p>";
+          return;
+        }
+  
+        const doubtsHtml = doubts.map(doubt => `
+          <li class="p-4 border border-gray-300 rounded">
+            <p class="text-gray-800"><strong>Question:</strong> ${doubt.questionText}</p>
+            ${doubt.answerText
+              ? `<p class="text-gray-800 mt-2"><strong>Response:</strong> ${doubt.answerText}</p>`
+              : `<p class="text-gray-500 mt-2">No response yet.</p>`}
+            <p class="text-sm text-gray-500 mt-2">Asked by: ${doubt.student ? doubt.student.name : "Unknown"}</p>
+          </li>
+        `).join("");
+  
+        doubtsContainer.innerHTML = `<ul class="space-y-4">${doubtsHtml}</ul>`;
+      } catch (error) {
+        console.error("Error fetching doubts:", error);
+        doubtsContainer.innerHTML = "<p class='text-red-600'>Unable to load doubts. Please try again later.</p>";
+      }
+    });
+  </script>
 </body>
 </html>

@@ -779,39 +779,20 @@ app.get("/certificates/view/:certificateId", async (req, res) => {
   }
 });
 
-//doubts
 app.post("/pages/:pageId/doubt", async (req, res) => {
-  if (!req.session.user || req.session.user.role !== 'student') {
-    return res.redirect("/student/login");
-  }
-
-  const { pageId } = req.params;
-  const { doubt } = req.body;
-
   try {
-    // Fetch the page and its associated lesson and course
-    const page = await db.Page.findByPk(pageId, {
-      include: [
-        {
-          model: db.Lesson,
-          as: "lesson",
-          include: [{ model: db.Course, as: "course" }],
-        },
-      ],
-    });
-
-    if (!page) {
-      return res.status(404).send("Page not found");
-    }
+    const { pageId } = req.params;
+    const { doubt } = req.body;
 
     // Save the doubt in the database
     await db.Doubt.create({
-      userId: req.session.user.id,
-      pageId: pageId,
-      courseId: page.lesson.course.id, // Get the courseId from the associated course
-      questionText: doubt, // Save the doubt text
+      userId: req.session.user.id, // Assuming the user is logged in
+      pageId,
+      courseId: req.body.courseId || null, // Optional courseId
+      questionText: doubt,
     });
 
+    // Redirect back to the same page
     res.redirect(`/pages/${pageId}`);
   } catch (error) {
     console.error("Error occurred while submitting doubt:", error);
@@ -819,36 +800,48 @@ app.post("/pages/:pageId/doubt", async (req, res) => {
   }
 });
 
-app.get("/pages/:pageId", async (req, res) => {
+app.get("/pages/:pageId/doubts", async (req, res) => {
+  const { pageId } = req.params;
+
   try {
-    const page = await db.Page.findByPk(req.params.pageId, {
+    const doubts = await db.Doubt.findAll({
+      where: { pageId },
       include: [
-        {
-          model: db.Lesson,
-          as: "lesson",
-          include: [{ model: db.Course, as: "course" }],
-        },
-        {
-          model: db.Doubt,
-          as: "doubts",
-          include: [
-            { model: db.User, as: "student", attributes: ["name"] },
-          ],
-        },
+        { model: db.User, as: "student", attributes: ["id", "name"] }, // Include student details
       ],
     });
 
-    if (!page) {
-      return res.status(404).send("Page not found");
+    if (!doubts) {
+      return res.status(404).json({ message: "No doubts found for this page." });
     }
 
-    res.render("pageDetails", {
-      page,
-      csrfToken: req.csrfToken(),
-    });
+    res.json(doubts); // Return doubts as JSON
   } catch (error) {
-    console.error("Error occurred while fetching page details:", error);
-    res.status(500).send("Internal server error");
+    console.error("Error occurred while fetching doubts:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.post("/doubts/:doubtId/respond", async (req, res) => {
+  const { doubtId } = req.params;
+  const { response } = req.body;
+
+  try {
+    const doubt = await db.Doubt.findByPk(doubtId);
+
+    if (!doubt) {
+      return res.status(404).json({ message: "Doubt not found" });
+    }
+
+    // Update the doubt with the educator's response
+    doubt.answerText = response;
+    doubt.isResolved = true;
+    await doubt.save();
+
+    res.json({ message: "Response saved successfully" });
+  } catch (error) {
+    console.error("Error occurred while responding to doubt:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
