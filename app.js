@@ -842,18 +842,76 @@ app.get("/certificates/view/:certificateId", async (req, res) => {
     res.status(500).send("Internal server error");
   }
 });
+app.get("/pages/:pageId", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'student') {
+    return res.redirect("/student/login");
+  }
+
+  const { pageId } = req.params;
+
+  try {
+    // Fetch the page details, including doubts
+    const page = await db.Page.findByPk(pageId, {
+      include: [
+        {
+          model: db.Lesson,
+          as: "lesson",
+          include: [{ model: db.Course, as: "course" }],
+        },
+        {
+          model: db.Doubt,
+          as: "doubts",
+          include: [{ model: db.User, as: "student", attributes: ["name"] }],
+        },
+      ],
+    });
+
+    if (!page) {
+      return res.status(404).send("Page not found");
+    }
+
+    res.render("pageDetails", {
+      page,
+      csrfToken: req.csrfToken(),
+    });
+  } catch (error) {
+    console.error("Error occurred while fetching page details:", error);
+    res.status(500).send("Internal server error");
+  }
+});
 
 app.post("/pages/:pageId/doubt", async (req, res) => {
   try {
     const { pageId } = req.params;
     const { doubt } = req.body;
 
+    // Ensure the user is logged in and is a student
+    if (!req.session.user || req.session.user.role !== 'student') {
+      return res.redirect("/student/login");
+    }
+
+    // Validate the doubt field
+    if (!doubt || doubt.trim() === "") {
+      return res.status(400).send("Doubt cannot be empty");
+    }
+
+    // Fetch the courseId using the pageId
+    const page = await db.Page.findByPk(pageId, {
+      include: [{ model: db.Lesson, as: "lesson", attributes: ["courseId"] }],
+    });
+
+    if (!page) {
+      return res.status(404).send("Page not found");
+    }
+
+    const courseId = page.lesson.courseId;
+
     // Save the doubt in the database
     await db.Doubt.create({
       userId: req.session.user.id, // Assuming the user is logged in
       pageId,
-      courseId: req.body.courseId || null, // Optional courseId
-      questionText: doubt,
+      courseId, // Use the fetched courseId
+      questionText: doubt.trim(),
     });
 
     // Redirect back to the same page
@@ -865,6 +923,9 @@ app.post("/pages/:pageId/doubt", async (req, res) => {
 });
 
 app.get("/pages/:pageId/doubts", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'student') {
+    return res.redirect("/student/login");
+  }
   const { pageId } = req.params;
 
   try {
@@ -875,7 +936,7 @@ app.get("/pages/:pageId/doubts", async (req, res) => {
       ],
     });
 
-    if (!doubts) {
+    if (!doubts || doubts.length === 0) {
       return res.status(404).json({ message: "No doubts found for this page." });
     }
 
