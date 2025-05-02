@@ -308,6 +308,11 @@ app.get("/courses/:id", async (req, res) => {
       where: { id: courseId },
       include: [
         {
+          model: db.Review,
+          as: "reviews",
+          include: [{ model: db.User, as: "student", attributes: ["name"] }],
+        },
+        {
           model: db.Lesson,
           as: "lessons",
           include: [
@@ -967,6 +972,47 @@ app.post("/doubts/:doubtId/respond", async (req, res) => {
   } catch (error) {
     console.error("Error occurred while responding to doubt:", error);
     res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.post("/courses/:courseId/review", async (req, res) => {
+  if (!req.session.user || req.session.user.role !== 'student') {
+    return res.redirect("/student/login");
+  }
+
+  const { courseId } = req.params;
+  const { rating, comment } = req.body;
+
+  try {
+    // Validate the rating
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).send("Rating must be between 1 and 5.");
+    }
+
+    // Check if the student is enrolled in the course
+    const enrollment = await db.Enrollment.findOne({
+      where: {
+        userId: req.session.user.id,
+        courseId: courseId,
+      },
+    });
+
+    if (!enrollment) {
+      return res.status(403).send("You are not enrolled in this course.");
+    }
+
+    // Save the review in the database
+    await db.Review.create({
+      userId: req.session.user.id,
+      courseId,
+      rating,
+      comment: comment ? comment.trim() : null,
+    });
+
+    res.redirect(`/courses/${courseId}`);
+  } catch (error) {
+    console.error("Error occurred while submitting review:", error);
+    res.status(500).send("Internal server error");
   }
 });
 

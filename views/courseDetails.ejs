@@ -42,6 +42,51 @@
         <strong>Course Completed!</strong>
       </div>
     <% } %>
+
+    <section class="mb-12">
+      <h3 class="text-xl font-bold mb-4">Submit a Review</h3>
+      <form method="POST" action="/courses/<%= course.id %>/review">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <label for="rating" class="block mb-2">Rating (1-5):</label>
+        <select name="rating" id="rating" class="w-full p-2 border border-gray-300 rounded mb-4" required>
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+          <option value="4">4</option>
+          <option value="5">5</option>
+        </select>
+        <label for="comment" class="block mb-2">Comment (optional):</label>
+        <textarea
+          name="comment"
+          id="comment"
+          rows="4"
+          class="w-full p-2 border border-gray-300 rounded mb-4"
+          placeholder="Write your review here..."
+        ></textarea>
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-500 transition">
+          Submit Review
+        </button>
+      </form>
+    </section>
+    
+    <section class="mb-12">
+      <h3 class="text-xl font-bold mb-4">Reviews</h3>
+      <% if (course.reviews.length === 0) { %>
+        <p class="text-gray-600">No reviews yet.</p>
+      <% } else { %>
+        <ul class="space-y-4">
+          <% course.reviews.forEach(review => { %>
+            <li class="p-4 border border-gray-300 rounded">
+              <p class="text-gray-800"><strong>Rating:</strong> <%= review.rating %>/5</p>
+              <% if (review.comment) { %>
+                <p class="text-gray-800 mt-2"><strong>Comment:</strong> <%= review.comment %></p>
+              <% } %>
+              <p class="text-sm text-gray-500 mt-2">By: <%= review.student.name %></p>
+            </li>
+          <% }); %>
+        </ul>
+      <% } %>
+    </section>
   </main>
 </body>
 </html>
