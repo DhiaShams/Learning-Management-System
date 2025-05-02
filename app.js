@@ -1390,6 +1390,11 @@ app.get("/educator/reports/:courseId", async (req, res) => {
       where: { educatorId: req.session.user.id },
       include: [
         {
+          model: db.Review,
+          as: "reviews",
+          include: [{ model: db.User, as: "student", attributes: ["name"] }],
+        },
+        {
           model: db.Enrollment,
           as: "enrollments",
           include: [
@@ -1448,6 +1453,7 @@ app.get("/educator/reports/:courseId", async (req, res) => {
       course,
       students,
       doubts: course.doubts,
+      reviews: course.reviews,
       csrfToken: req.csrfToken(),
     });
   } catch (error) {

@@ -65,6 +65,26 @@
           </ul>
       <% } %>
     </section>
+
+    <!-- Section: Reviews -->
+<section class="mb-12">
+  <h3 class="text-xl font-bold mb-4">Reviews</h3>
+  <% if (reviews && reviews.length === 0) { %>
+    <p class="text-gray-600">No reviews have been submitted yet.</p>
+  <% } else { %>
+    <ul class="space-y-4">
+      <% reviews.forEach(review => { %>
+        <li class="p-4 border border-gray-300 rounded">
+          <p class="text-gray-800"><strong>Rating:</strong> <%= review.rating %>/5</p>
+          <% if (review.comment) { %>
+            <p class="text-gray-800 mt-2"><strong>Comment:</strong> <%= review.comment %></p>
+          <% } %>
+          <p class="text-sm text-gray-500 mt-2">By: <%= review.student.name %></p>
+        </li>
+      <% }); %>
+    </ul>
+  <% } %>
+</section>
   </main>
 </body>
 </html>
