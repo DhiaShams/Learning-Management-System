@@ -1520,6 +1520,69 @@ app.post("/doubts/:doubtId/respond", async (req, res) => {
   }
 });
 
+app.get("/change-password", (req, res) => {
+  if (!req.session.user) {
+    return res.redirect("/login");
+  }
+
+  res.render("changePassword", {
+    csrfToken: req.csrfToken(),
+    userName: req.session.user.name,
+  });
+});
+
+app.post("/change-password", async (req, res) => {
+  if (!req.session.user) {
+    return res.redirect("/login");
+  }
+
+  const { currentPassword, newPassword, confirmPassword } = req.body;
+
+  try {
+    // Validate the request body
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return res.status(400).send("All fields are required");
+    }
+
+    // Fetch the user from the database
+    const user = await db.User.findByPk(req.session.user.id);
+
+    if (!user) {
+      return res.status(404).send("User not found");
+    }
+
+    // Validate the current password
+    const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!isValidPassword) {
+      return res.status(400).send("Current password is incorrect");
+    }
+
+    // Validate the new password and confirmation
+    if (newPassword !== confirmPassword) {
+      return res.status(400).send("New password and confirmation do not match");
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update the user's password
+    user.password = hashedPassword;
+    await user.save();
+
+    // Redirect to the appropriate dashboard based on the user's role
+    if (req.session.user.role === "student") {
+      return res.redirect("/student/dashboard?success=Password changed successfully");
+    } else if (req.session.user.role === "educator") {
+      return res.redirect("/educator/dashboard?success=Password changed successfully");
+    } else {
+      return res.redirect("/login");
+    }
+  } catch (error) {
+    console.error("Error occurred while changing password:", error);
+    res.status(500).send("Internal server error");
+  }
+});
+
 app.post('/logout', (req, res) => {
   req.logout((err) => {
     if (err) {
