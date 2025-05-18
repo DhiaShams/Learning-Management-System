@@ -14,10 +14,7 @@
     "dialect": "postgres"
   },
   "production": {
-    "username": "postgres",
-    "password": "mypass123",
-    "database": "lms_dev_production",
-    "host": "127.0.0.1",
+    "use_env_variable": "DATABASE_URL",
     "dialect": "postgres"
   }
 }
