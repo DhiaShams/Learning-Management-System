@@ -440,20 +440,20 @@ app.post("/courses/:id/enroll", async (req, res) => {
   }
 
   const courseId = req.params.id;
+  const userId = req.session.user.id;
 
   try {
-    // Enroll the student in the course
-    await db.Enrollment.findOrCreate({
-      where: {
-        userId: req.session.user.id,
-        courseId: courseId,
-      },
-    });
-
-    // Redirect back to the dashboard
-    res.redirect("/student/dashboard");
+    // Prevent duplicate enrollments
+    const existing = await db.Enrollment.findOne({ where: { userId, courseId } });
+    if (!existing) {
+      await db.Enrollment.create({
+        userId,
+        courseId
+      });
+    }
+    res.redirect(`/courses/${courseId}/preview`);
   } catch (error) {
-    console.error("Error occurred while enrolling in the course:", error);
+    console.error("Error enrolling in course:", error);
     res.status(500).send("Internal server error");
   }
 });
