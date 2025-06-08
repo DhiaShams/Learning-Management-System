@@ -148,7 +148,7 @@ app.post('/api/:role/login', (req, res, next) => {
 });
 
 // Handle signup
-app.post('/api/:role/signup', async (req, res) => {
+app.post('/api/:role/signup', async (req, res, next) => {
   const { role } = req.params;
   const { name, email, password } = req.body;
 
@@ -158,21 +158,29 @@ app.post('/api/:role/signup', async (req, res) => {
 
     const newUser = await db.User.create({ name, email, password: hashedPassword, role });
 
-    // Set session
-    req.session.user = {
-      id: newUser.id,
-      name: newUser.name,
-      role: role,
-    };
+    // Log the user in using Passport
+    req.logIn(newUser, (err) => {
+      if (err) {
+        console.error('Error during session creation:', err);
+        return res.status(500).send('Internal server error');
+      }
 
-    // Redirect to the respective dashboard
-    if (role === 'student') {
-      return res.redirect('/student/dashboard');
-    } else if (role === 'educator') {
-      return res.redirect('/educator/dashboard');
-    } else {
-      return res.status(400).send('Invalid role');
-    }
+      // Set session user object
+      req.session.user = {
+        id: newUser.id,
+        name: newUser.name,
+        role: role,
+      };
+
+      // Redirect to the respective dashboard
+      if (role === 'student') {
+        return res.redirect('/student/dashboard');
+      } else if (role === 'educator') {
+        return res.redirect('/educator/dashboard');
+      } else {
+        return res.status(400).send('Invalid role');
+      }
+    });
   } catch (error) {
     console.error('Error during signup:', error);
     res.status(500).send('Internal server error');
