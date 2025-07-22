@@ -47,29 +47,31 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
 
-  User.init({
-    name: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    email: {
-      type: DataTypes.STRING,
-      unique: true,  // Ensure email is unique
-      allowNull: false,
-    },
-    password: {
-      type: DataTypes.STRING,
-      allowNull: false,
-    },
-    role: {
-      type: DataTypes.STRING,
-      defaultValue: 'student', // Default role is student, can be overridden for educators
-      allowNull: false,
-    },
-  }, {
-    sequelize,
-    modelName: 'User',
-  });
+User.init({
+  name: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  email: {
+    type: DataTypes.STRING,
+    unique: true,
+    allowNull: false,
+  },
+  password: {
+    type: DataTypes.STRING,
+    allowNull: false,
+  },
+  role: {
+    type: DataTypes.STRING,
+    defaultValue: 'student',
+    allowNull: false,
+  },
+}, {
+  sequelize,
+  modelName: 'User',
+  tableName: 'Users',    
+  timestamps: true,       
+});
 
   return User;
 };
