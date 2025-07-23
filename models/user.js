@@ -1,77 +1,78 @@
 'use strict';
-const {
-  Model
-} = require('sequelize');
+const { Model } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      // A User can enroll in many Courses (many-to-many relationship)
+      // Many-to-many: User <-> Course
       User.belongsToMany(models.Course, {
-        through: models.Enrollment,  // Associating via the Enrollment table
+        through: models.Enrollment,
         foreignKey: 'userId',
         as: 'enrolledCourses',
       });
 
-      // A User can leave reviews for many Courses (one-to-many relationship)
+      // One-to-many: User -> Review
       User.hasMany(models.Review, {
         foreignKey: 'userId',
         as: 'reviews',
       });
 
-      // A User can ask many Doubts (one-to-many relationship)
+      // One-to-many: User -> Doubt
       User.hasMany(models.Doubt, {
         foreignKey: 'userId',
         as: 'doubts',
       });
 
-      // A User can receive many Certificates (one-to-many relationship)
+      // One-to-many: User -> Certificate
       User.hasMany(models.Certificate, {
         foreignKey: 'userId',
         as: 'certificates',
       });
 
-      // A User (educator) can create many Courses (one-to-many relationship)
+      // One-to-many: User (educator) -> Course
       User.hasMany(models.Course, {
-          foreignKey: 'educatorId',
-          as: 'createdCourses', 
+        foreignKey: 'educatorId',
+        as: 'createdCourses',
       });
 
-      User.hasMany(models.PageCompletion, { as: "pageCompletions", foreignKey: "userId" });
-      User.hasMany(models.LessonCompletion, { as: "lessonCompletions", foreignKey: "userId" });
+      // Completion relationships
+      User.hasMany(models.PageCompletion, {
+        as: "pageCompletions",
+        foreignKey: "userId"
+      });
+
+      User.hasMany(models.LessonCompletion, {
+        as: "lessonCompletions",
+        foreignKey: "userId"
+      });
     }
   }
 
-User.init({
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  email: {
-    type: DataTypes.STRING,
-    unique: true,
-    allowNull: false,
-  },
-  password: {
-    type: DataTypes.STRING,
-    allowNull: false,
-  },
-  role: {
-    type: DataTypes.STRING,
-    defaultValue: 'student',
-    allowNull: false,
-  },
-}, {
-  sequelize,
-  modelName: 'User',
-  tableName: 'Users',    
-  timestamps: true,       
-});
+  User.init({
+    name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    email: {
+      type: DataTypes.STRING,
+      unique: true,
+      allowNull: false,
+    },
+    password: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    role: {
+      type: DataTypes.STRING,
+      defaultValue: 'student',
+      allowNull: false,
+    },
+  }, {
+    sequelize,
+    modelName: 'User',
+    tableName: 'users', 
+    timestamps: true,
+  });
 
   return User;
 };
