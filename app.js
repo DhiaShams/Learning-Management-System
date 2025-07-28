@@ -36,14 +36,14 @@ const LocalStrategy = require('passport-local').Strategy;
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Configure Passport.js Local Strategy
+
 passport.use(
   new LocalStrategy(
-    { usernameField: 'email', passwordField: 'password' }, // Use email and password for authentication
+    { usernameField: 'email', passwordField: 'password' },
     async (email, password, done) => {
       try {
         // Find the user by email
-        const user = await db.User.findOne({ where: { email } });
+        const user = await db.People.findOne({ where: { email } }); // <-- changed
 
         if (!user) {
           return done(null, false, { message: 'Invalid email or password' });
@@ -72,7 +72,7 @@ passport.serializeUser((user, done) => {
 // Deserialize user from session
 passport.deserializeUser(async (id, done) => {
   try {
-    const user = await db.User.findByPk(id);
+    const user = await db.People.findByPk(id); // <-- changed
     done(null, user);
   } catch (error) {
     done(error);
@@ -156,7 +156,7 @@ app.post('/api/:role/signup', async (req, res, next) => {
     // Hash password before storing
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await db.User.create({ name, email, password: hashedPassword, role });
+    const newUser = await db.People.create({ name, email, password: hashedPassword, role });
 
     // Log the user in using Passport
     req.logIn(newUser, (err) => {
@@ -194,14 +194,14 @@ app.get('/student/dashboard', ensureAuthenticated, async (req, res) => {
 
   try {
     // Fetch the student and their enrolled courses
-    const student = await db.User.findByPk(req.session.user.id, {
+    const student = await db.People.findByPk(req.session.user.id, {
       include: [
         {
           model: db.Course,
           as: "enrolledCourses",
           include: [
             {
-              model: db.User,
+              model: db.People,
               as: "educator", // Include the educator who created the course
               attributes: ["name"], // Fetch only the educator's name
             },
@@ -249,7 +249,7 @@ app.get('/student/dashboard', ensureAuthenticated, async (req, res) => {
       },
       include: [
         {
-          model: db.User,
+          model: db.People,
           as: "educator", // Include the educator who created the course
           attributes: ["name"], // Fetch only the educator's name
         },
@@ -307,7 +307,7 @@ app.get("/courses/:id", async (req, res) => {
         {
           model: db.Review,
           as: "reviews",
-          include: [{ model: db.User, as: "student", attributes: ["name"] }],
+          include: [{ model: db.People, as: "student", attributes: ["name"] }],
         },
         {
           model: db.Lesson,
@@ -469,7 +469,7 @@ app.get("/courses/:id/preview", async (req, res) => {
           attributes: ["id", "title"], // Fetch only necessary fields
         },
         {
-          model: db.User,
+          model: db.People,
           as: "educator",
           attributes: ["name"], // Fetch educator's name
         },
@@ -675,7 +675,7 @@ app.get("/pages/:pageId", async (req, res) => {
         {
           model: db.Doubt,
           as: "doubts",
-          include: [{ model: db.User, as: "student", attributes: ["name"] }],
+          include: [{ model: db.People, as: "student", attributes: ["name"] }],
         },
       ],
     });
@@ -746,7 +746,7 @@ app.get("/pages/:pageId/doubts", async (req, res) => {
     const doubts = await db.Doubt.findAll({
       where: { pageId },
       include: [
-        { model: db.User, as: "student", attributes: ["id", "name"] }, // Include student details
+        { model: db.People, as: "student", attributes: ["id", "name"] }, // Include student details
       ],
     });
 
@@ -1201,14 +1201,14 @@ app.get("/educator/reports/:courseId", async (req, res) => {
         {
           model: db.Review,
           as: "reviews",
-          include: [{ model: db.User, as: "student", attributes: ["name"] }],
+          include: [{ model: db.People, as: "student", attributes: ["name"] }],
         },
         {
           model: db.Enrollment,
           as: "enrollments",
           include: [
             {
-              model: db.User,
+              model: db.People,
               as: "student",
               attributes: ["id", "name", "email"], // Fetch student details
             },
@@ -1219,7 +1219,7 @@ app.get("/educator/reports/:courseId", async (req, res) => {
           as: "doubts",
           include: [
             {
-              model: db.User,
+              model: db.People,
               as: "student",
               attributes: ["name"], // Fetch student name for doubts
             },
@@ -1281,7 +1281,7 @@ app.get("/doubts/:doubtId", async (req, res) => {
   try {
     const doubt = await db.Doubt.findByPk(doubtId, {
       include: [
-        { model: db.User, as: "student", attributes: ["name"] }, // Include student details
+        { model: db.People, as: "student", attributes: ["name"] }, // Include student details
         { model: db.Page, as: "page", attributes: ["title"] },   // Include page details
       ],
     });
@@ -1354,7 +1354,7 @@ app.post("/change-password", async (req, res) => {
     }
 
     // Fetch the user from the database
-    const user = await db.User.findByPk(req.session.user.id);
+    const user = await db.People.findByPk(req.session.user.id);
 
     if (!user) {
       return res.status(404).send("User not found");
