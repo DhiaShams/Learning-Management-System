@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
   // Define associations
   PageCompletion.associate = (models) => {
     PageCompletion.belongsTo(models.Page, { as: "page", foreignKey: "pageId" });
-    PageCompletion.belongsTo(models.User, { as: "user", foreignKey: "userId" });
+    PageCompletion.belongsTo(models.People, { as: "user", foreignKey: "userId" });
   };
 
   return PageCompletion;

@@ -14,7 +14,7 @@ module.exports = (sequelize, DataTypes) => {
       Doubt.belongsTo(models.Course, { foreignKey: 'courseId', as: 'course' });     
       Doubt.belongsTo(models.Lesson, { foreignKey: 'lessonId' });     
       Doubt.belongsTo(models.Page, { foreignKey: "pageId", as: "page" }); // Associate with Page
-      Doubt.belongsTo(models.User, { foreignKey: "userId", as: "student" }); // Associate with User         
+      Doubt.belongsTo(models.People, { foreignKey: "userId", as: "student" }); // Associate with User         
     }
   }
   Doubt.init({

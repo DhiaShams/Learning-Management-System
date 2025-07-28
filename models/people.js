@@ -2,53 +2,53 @@
 const { Model } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
-  class User extends Model {
+  class People extends Model {
     static associate(models) {
-      // Many-to-many: User <-> Course
-      User.belongsToMany(models.Course, {
+      // Many-to-many: People <-> Course
+      People.belongsToMany(models.Course, {
         through: models.Enrollment,
         foreignKey: 'userId',
         as: 'enrolledCourses',
       });
 
-      // One-to-many: User -> Review
-      User.hasMany(models.Review, {
+      // One-to-many: People -> Review
+      People.hasMany(models.Review, {
         foreignKey: 'userId',
         as: 'reviews',
       });
 
-      // One-to-many: User -> Doubt
-      User.hasMany(models.Doubt, {
+      // One-to-many: People -> Doubt
+      People.hasMany(models.Doubt, {
         foreignKey: 'userId',
         as: 'doubts',
       });
 
-      // One-to-many: User -> Certificate
-      User.hasMany(models.Certificate, {
+      // One-to-many: People -> Certificate
+      People.hasMany(models.Certificate, {
         foreignKey: 'userId',
         as: 'certificates',
       });
 
-      // One-to-many: User (educator) -> Course
-      User.hasMany(models.Course, {
+      // One-to-many: People (educator) -> Course
+      People.hasMany(models.Course, {
         foreignKey: 'educatorId',
         as: 'createdCourses',
       });
 
       // Completion relationships
-      User.hasMany(models.PageCompletion, {
+      People.hasMany(models.PageCompletion, {
         as: "pageCompletions",
         foreignKey: "userId"
       });
 
-      User.hasMany(models.LessonCompletion, {
+      People.hasMany(models.LessonCompletion, {
         as: "lessonCompletions",
         foreignKey: "userId"
       });
     }
   }
 
-  User.init({
+  People.init({
     name: {
       type: DataTypes.STRING,
       allowNull: false,
@@ -69,10 +69,10 @@ module.exports = (sequelize, DataTypes) => {
     },
   }, {
     sequelize,
-    modelName: 'User',
-    tableName: 'People', // <-- changed from 'users' to 'People'
+    modelName: 'People', // Changed from 'User' to 'People'
+    tableName: 'People',
     timestamps: true,
   });
 
-  return User;
+  return People;
 };

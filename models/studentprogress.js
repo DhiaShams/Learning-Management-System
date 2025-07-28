@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      StudentProgress.belongsTo(models.User, { foreignKey: 'userId' });
+      StudentProgress.belongsTo(models.People, { foreignKey: 'userId' });
       StudentProgress.belongsTo(models.Course, { foreignKey: 'courseId' });
       StudentProgress.belongsTo(models.Lesson, { foreignKey: 'lessonId' });
       StudentProgress.belongsTo(models.Page, { foreignKey: 'pageId' });

@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // A Course belongs to an Educator (User)
-      Course.belongsTo(models.User, {
+      Course.belongsTo(models.People, {
         foreignKey: 'educatorId',
         as: 'educator',
       });
@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
       });
     
       // A Course has many Students through Enrollments
-      Course.belongsToMany(models.User, {
+      Course.belongsToMany(models.People, {
         through: models.Enrollment,
         as: 'enrolledStudents',
         foreignKey: 'courseId',
